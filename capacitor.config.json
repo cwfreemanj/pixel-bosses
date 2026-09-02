@@ -1,0 +1,13 @@
+{
+  "appId": "com.getfirstpage.pixelbosses",
+  "appName": "Pixel Bosses",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https",
+    "allowNavigation": ["*.up.railway.app"]
+  },
+  "android": {
+    "allowMixedContent": false,
+    "backgroundColor": "#070816"
+  }
+}

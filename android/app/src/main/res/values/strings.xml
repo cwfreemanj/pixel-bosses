@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Pixel Bosses</string>
+    <string name="title_activity_main">Pixel Bosses</string>
+    <string name="package_name">com.getfirstpage.pixelbosses</string>
+    <string name="custom_url_scheme">com.getfirstpage.pixelbosses</string>
+</resources>

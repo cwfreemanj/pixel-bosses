@@ -1,0 +1,5813 @@
+<!--<canvas id="spriteCanvas" width="1640" height="768" background="#000000"></canvas>
+
+<input type="number" id="charCount" value="16" min="1" max="256">
+
+<button onclick="generateCharacterBossCardGrid()">Generate Bosses</button>-->
+
+<div class="pvp-ui">
+  <div class="topbar">
+    <div class="player left">
+      <div class="name">PLAYER A</div>
+      <div class="counts">
+        <span>Deck: <b id="aDeck">20</b></span>
+        <span>Grave: <b id="aGrave">0</b></span>
+      </div>
+      <div class="active" id="aActiveLabel">—</div>
+    </div>
+
+    <div class="center">
+      <div class="round">ROUND <b id="roundNum">0</b></div>
+      <div class="vs">VS</div>
+      <div class="winner" id="winnerTop"></div>
+    </div>
+
+    <div class="player right">
+      <div class="name">PLAYER B</div>
+      <div class="counts">
+        <span>Deck: <b id="bDeck">20</b></span>
+        <span>Grave: <b id="bGrave">0</b></span>
+      </div>
+      <div class="active" id="bActiveLabel">—</div>
+    </div>
+  </div>
+
+  <div class="main four-column-layout">
+    <div class="arena-column">
+    <div class="arena">
+      <!-- Your existing canvas -->
+      <canvas id="spriteCanvas" width="600" height="600"></canvas>
+    </div>
+    </div>
+
+    <div class="deck-save-column panel">
+<div class="panel-section">
+  <div class="panel-title">DECK SAVE / LOAD</div>
+
+  <div class="row" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+    <label style="font-size:12px; opacity:.9;">A Name</label>
+    <input id="deckNameA" value="PlayerA" style="flex:1; min-width:120px;">
+    <label style="font-size:12px; opacity:.9;">B Name</label>
+    <input id="deckNameB" value="PlayerB" style="flex:1; min-width:120px;">
+  </div>
+
+  <div class="btnrow" style="margin-top:8px;">
+    <button id="btnSaveDecks">Save Decks</button>
+    <button id="btnLoadDecks">Load Decks</button>
+  </div>
+
+  <div class="btnrow">
+    <button id="btnExportA">Export A (.json)</button>
+    <button id="btnExportB">Export B (.json)</button>
+  </div>
+
+  <div class="row" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+    <label style="font-size:12px; opacity:.9;">Import A</label>
+    <input id="fileImportA" type="file" accept="application/json" />
+    <label style="font-size:12px; opacity:.9;">Import B</label>
+    <input id="fileImportB" type="file" accept="application/json" />
+  </div>
+
+  <div style="font-size:12px; opacity:.8; margin-top:6px; line-height:1.3;">
+    Save stores decks in <code>localStorage</code>. Export makes a shareable JSON file.
+  </div>
+</div>
+
+      <div class="panel-section">
+        <div class="panel-title">BATTLE CONTROLS</div>
+        <div class="btnrow">
+          <button id="btnGen">Generate Decks</button>
+          <button id="btnStart">Start Match</button>
+          <button id="btnStep">Next Battle</button>
+        </div>
+        <div class="btnrow">
+          <button id="btnAuto">Auto: OFF</button>
+          <button id="btnReset">Reset</button>
+        </div>
+      </div>
+
+      <div class="panel-section">
+        <div class="panel-title">DUEL BREAKDOWN</div>
+        <div class="breakdown">
+          <div>Rarity: <b id="bdRarity">—</b></div>
+          <div>Level: <b id="bdLevel">—</b></div>
+          <div>Element: <b id="bdElement">—</b></div>
+          <div>Winner: <b id="bdWinner">—</b></div>
+          <div>Power: <b id="bdPower">—</b></div>
+
+        </div>
+      </div>
+
+      <div class="panel-section logwrap">
+        <div class="panel-title">BATTLE LOG</div>
+        <div class="log" id="battleLog"></div>
+      </div>
+    </div>
+
+    <div class="mint-preview side-preview">
+      <div class="mint-preview-title">
+        <span>Mint Preview</span>
+        <span id="previewHash" class="mono"></span>
+        <div id="previewMintBadge"></div>
+      </div>
+
+      <div class="mint-preview-canvas-wrap">
+        <canvas id="previewCanvas" width="520" height="840"></canvas>
+      </div>
+
+      <div class="mint-preview-meta" id="previewMeta"></div>
+
+      <div class="mint-preview-actions">
+        <button id="btnExportPreview">Export Preview Card JSON</button>
+        <button id="btnMintPreview" title="Minting backend not wired yet">Mint (Soon)</button>
+      </div>
+    </div>
+
+    <div class="side-tools panel">
+      <div class="panel-section quick-actions-section">
+        <div class="panel-title">PREVIEW / BINDER ACTIONS</div>
+        <div class="mint-actions">
+          <button id="btnPreviewA">Preview Active A</button>
+          <button id="btnPreviewB">Preview Active B</button>
+          <button id="btnAddActiveA">Add Active A to Binder</button>
+          <button id="btnAddActiveB">Add Active B to Binder</button>
+          <button id="btnShowBinder">Toggle Binder</button>
+          <button id="btnClearBinder">Clear Binder (Local)</button>
+        </div>
+      </div>
+
+      <div class="panel-section deck-builder-section">
+        <div class="panel-title">DECK BUILDER</div>
+        <button id="deckModeBtn">Deck Builder: OFF</button>
+        <div id="deckPanel" class="deck-panel"></div>
+      </div>
+
+  <div class="binder" id="binderWrap" style="display:none;">
+    
+    <div class="binder-header">
+      <div class="binder-title">Binder</div>
+      <div class="binder-count">Cards: <b id="binderCount">0</b></div>
+      <div class="binder-toolbar">
+  <div class="binder-row">
+    <div class="binder-field grow">
+      <label>Search</label>
+      <input id="bfSearch" type="text" placeholder="Name, type, element, variant..." />
+    </div>
+  
+    <div class="binder-field">
+      <label>Sort</label>
+      <select id="bfSort">
+        <option value="recent_desc">Recently Added (new → old)</option>
+        <option value="recent_asc">Recently Added (old → new)</option>
+        <option value="name_asc">Name (A → Z)</option>
+        <option value="name_desc">Name (Z → A)</option>
+        <option value="rarity_desc">Rarity (high → low)</option>
+        <option value="rarity_asc">Rarity (low → high)</option>
+        <option value="power_desc">Power (high → low)</option>
+        <option value="power_asc">Power (low → high)</option>
+        <option value="level_desc">Level (high → low)</option>
+        <option value="level_asc">Level (low → high)</option>
+      </select>
+    </div>
+
+    <div class="binder-field">
+      <label>Element</label>
+      <select id="bfElement">
+        <option value="">Any</option>
+        <option value="nature">Nature</option>
+        <option value="void">Void</option>
+        <option value="arcane">Arcane</option>
+        <option value="inferno">Inferno</option>
+        <option value="frost">Frost</option>
+        <option value="radiant">Radiant</option>
+        <option value="blood">Blood</option>
+      </select>
+    </div>
+
+    <div class="binder-field">
+      <label>Only Minted</label>
+      <select id="bfMinted">
+        <option value="">Any</option>
+        <option value="ready">Mint Ready / Saved</option>
+        <option value="onchain">On-chain Minted</option>
+        <option value="none">Not Minted</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="binder-row">
+    <div class="binder-field grow">
+      <label>Rarity</label>
+      <div class="rarity-chips" id="bfRarityChips">
+        <button class="chip" data-r="common">Common</button>
+        <button class="chip" data-r="uncommon">Uncommon</button>
+        <button class="chip" data-r="rare">Rare</button>
+        <button class="chip" data-r="epic">Epic</button>
+        <button class="chip" data-r="legendary">Legendary</button>
+        <button class="chip" data-r="mythic">Mythic</button>
+      </div>
+    </div>
+
+    <div class="binder-field">
+      <label>Power Min</label>
+      <input id="bfPowMin" type="number" placeholder="0" min="0" />
+    </div>
+
+    <div class="binder-field">
+      <label>Power Max</label>
+      <input id="bfPowMax" type="number" placeholder="9999" min="0" />
+    </div>
+
+    <div class="binder-field">
+      <label>Min LV</label>
+      <input id="bfLvMin" type="number" placeholder="0" min="0" />
+    </div>
+
+    <div class="binder-field">
+      <label>Max LV</label>
+      <input id="bfLvMax" type="number" placeholder="999" min="0" />
+    </div>
+  </div>
+
+  <div class="binder-row stats-row">
+    <div class="binder-field">
+      <label>HP ≥</label>
+      <input id="bfHP" type="number" placeholder="0" min="0" />
+    </div>
+    <div class="binder-field">
+      <label>ATK ≥</label>
+      <input id="bfATK" type="number" placeholder="0" min="0" />
+    </div>
+    <div class="binder-field">
+      <label>DEF ≥</label>
+      <input id="bfDEF" type="number" placeholder="0" min="0" />
+    </div>
+    <div class="binder-field">
+      <label>MAG ≥</label>
+      <input id="bfMAG" type="number" placeholder="0" min="0" />
+    </div>
+    <div class="binder-field">
+      <label>SPD ≥</label>
+      <input id="bfSPD" type="number" placeholder="0" min="0" />
+    </div>
+
+    <div class="binder-actions">
+      <button id="bfReset" class="btn-ghost">Reset Filters</button>
+      <div class="binder-meta">
+        Showing <b id="binderShown">0</b> / <b id="binderCountMeta">0</b>
+      </div>
+    </div>
+  </div>
+</div>
+
+      
+    </div>
+    <div class="binder-grid" id="binderGrid"></div>
+  </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.pvp-ui{
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  color: #e9e9ff;
+  background: radial-gradient(1200px 600px at 50% 0%, #241a3a 0%, #0b0d12 55%, #05060a 100%);
+  padding: 12px;
+}
+
+.topbar{
+  display:flex; gap:12px; align-items:stretch;
+  margin-bottom: 12px;
+}
+
+.player{
+  flex: 1;
+  border: 1px solid #2a2a3a;
+  border-radius: 10px;
+  padding: 10px;
+  background: rgba(15,16,24,0.75);
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.03) inset;
+}
+
+.player .name{ font-size: 14px; letter-spacing: 1px; opacity: 0.9; }
+.player .counts{ display:flex; gap:12px; margin-top: 6px; font-size: 12px; opacity: 0.95; }
+.player .active{ margin-top: 8px; font-size: 12px; opacity: 0.9; color: #cfe8ff; }
+
+.center{
+  width: 220px;
+  border: 1px solid #2a2a3a;
+  border-radius: 10px;
+  padding: 10px;
+  background: rgba(10,10,18,0.8);
+  display:flex; flex-direction:column; justify-content:center; align-items:center;
+  text-align:center;
+}
+
+.center .round{ font-size: 12px; opacity: 0.85; }
+.center .vs{ font-size: 22px; margin: 6px 0; letter-spacing: 3px; }
+.center .winner{ font-size: 12px; color: #00f5d4; min-height: 14px; }
+
+.main{
+  display:flex; gap:12px;
+}
+
+.arena{
+  flex: 1;
+  border: 1px solid #2a2a3a;
+  border-radius: 12px;
+  padding: 10px;
+  background: rgba(0,0,0,0.35);
+}
+
+.panel{
+  width: 340px;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+
+.panel-section{
+  border: 1px solid #2a2a3a;
+  border-radius: 12px;
+  padding: 10px;
+  background: rgba(15,16,24,0.75);
+}
+
+.panel-title{
+  font-size: 12px;
+  letter-spacing: 1px;
+  opacity: 0.85;
+  margin-bottom: 10px;
+}
+
+.btnrow{ display:flex; gap:8px; margin-bottom: 8px; }
+button{
+  flex:1;
+  padding: 10px 8px;
+  border-radius: 10px;
+  border: 1px solid #2a2a3a;
+  background: rgba(20,22,32,0.9);
+  color: #f2f2ff;
+  cursor:pointer;
+}
+button:hover{ filter: brightness(1.15); }
+
+.breakdown{
+  font-size: 12px;
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+}
+.logwrap{ flex: 1; display:flex; flex-direction:column; }
+.log{
+  font-size: 11px;
+  line-height: 1.35;
+  background: rgba(0,0,0,0.35);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 10px;
+  padding: 8px;
+  overflow:auto;
+  height: 240px;
+}
+
+
+.mint-ui { margin-top: 12px; font-family: monospace; color: #fff; }
+.mint-top { display: flex; gap: 12px; align-items: flex-start; flex-wrap: wrap; }
+
+.mint-actions { display:flex; flex-direction:column; gap:8px; min-width: 220px; }
+.mint-actions button { padding: 8px 10px; cursor:pointer; }
+
+.mint-preview { background:#0b0d10; border:1px solid #333; border-radius:12px; padding:10px; width: 740px; }
+.mint-preview-title { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; font-size:14px; }
+.mint-preview-canvas-wrap { display:flex; justify-content:center; background:#07080a; padding:10px; border-radius:10px; border:1px solid #222; }
+.mono { font-size:12px; opacity:0.8; }
+.mint-preview-meta { margin-top:10px; font-size:12px; line-height:1.4; opacity:0.9; }
+.mint-preview-actions { display:flex; gap:8px; margin-top:10px; }
+.mint-preview-actions button { padding:8px 10px; cursor:pointer; }
+
+.binder { margin-top: 12px; background:#0b0d10; border:1px solid #333; border-radius:12px; padding:10px; }
+.binder-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+.binder-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap:10px; }
+.binder-card { background:#07080a; border:1px solid #222; border-radius:10px; padding:8px; cursor:pointer; }
+.binder-card:hover { border-color:#555; }
+.binder-thumb { width:100%; height:auto; image-rendering: pixelated; border-radius:8px; }
+.binder-label { margin-top:6px; font-size:11px; opacity:0.85; }
+
+.binder-toolbar{
+  background: rgba(15,16,22,0.92);
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 14px;
+  padding: 12px;
+  margin: 10px 0 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+}
+
+.binder-row{
+  display: flex;
+  gap: 10px;
+  align-items: end;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.binder-field{
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 160px;
+}
+
+.binder-field.grow{ flex: 1; min-width: 240px; }
+
+.binder-field label{
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.binder-field input,
+.binder-field select{
+  background: rgba(0,0,0,0.35);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 10px;
+  padding: 9px 10px;
+  outline: none;
+}
+
+.binder-field input:focus,
+.binder-field select:focus{
+  border-color: rgba(0,245,212,0.55);
+  box-shadow: 0 0 0 3px rgba(0,245,212,0.18);
+}
+
+.rarity-chips{
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.chip{
+  background: rgba(0,0,0,0.35);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: #fff;
+  border-radius: 999px;
+  padding: 7px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  user-select: none;
+  transition: transform .08s ease, border-color .12s ease;
+}
+
+.chip:hover{ transform: translateY(-1px); }
+
+.chip.on{
+  border-color: rgba(255,255,255,0.42);
+  box-shadow: 0 0 0 3px rgba(255,255,255,0.08);
+}
+
+.stats-row{ align-items: end; }
+
+.binder-actions{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  margin-left:auto;
+}
+
+.btn-ghost{
+  background: transparent;
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 10px;
+  padding: 9px 12px;
+  cursor: pointer;
+}
+
+.btn-ghost:hover{
+  border-color: rgba(255,255,255,0.35);
+}
+
+.binder-meta{
+  font-size: 12px;
+  opacity: 0.85;
+}
+
+/* Your existing binder-card/thumb-wrap can stay.
+   If you don’t have thumb-wrap positioning yet, keep this: */
+.thumb-wrap{ position: relative; }
+.binder-card--selected{
+  outline: 3px solid currentColor;
+  transform: translateY(-2px);
+}
+/* make the badge sit on top of the thumbnail */
+.thumb-wrap{
+  position: relative;
+  display: inline-block;
+}
+
+.mint-badge{
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  z-index: 5;
+
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 14px;
+  line-height: 1;
+
+  /* safe defaults */
+  background: rgba(0,0,0,0.75);
+  color: #fff;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+  user-select: none;
+  pointer-events: none; /* so clicks still hit the card */
+}
+
+/* optional: different look when fully on-chain */
+.mint-badge.onchain{
+  background: rgba(0, 140, 255, 0.85);
+}
+
+
+.card-backstory {
+  margin-top: 8px;
+  padding: 8px 10px;
+  background: rgba(0, 245, 212, 0.06);
+  border-left: 2px solid #00f5d4;
+  border-radius: 0 6px 6px 0;
+  font-size: 11px;
+  line-height: 1.6;
+  color: #c8e6e3;
+  font-style: italic;
+  max-width: 340px;
+}
+
+
+
+/* ==========================================================
+   PATCH: compact top layout with preview card beside arena
+   ========================================================== */
+.main {
+  display: grid;
+  grid-template-columns: 620px 400px 340px;
+  gap: 12px;
+  align-items: start;
+}
+
+.arena {
+  width: 600px;
+  flex: none;
+  border: 1px solid #2a2a3a;
+  border-radius: 12px;
+  padding: 10px;
+  background: rgba(0,0,0,0.35);
+}
+
+#spriteCanvas {
+  display: block;
+  width: 600px;
+  height: 600px;
+  image-rendering: pixelated;
+  background: #05060a;
+  border-radius: 8px;
+}
+
+.panel {
+  width: 340px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.side-preview {
+  width: 380px;
+  max-width: 380px;
+  margin: 0;
+  background: #0b0d10;
+  border: 1px solid #333;
+  border-radius: 12px;
+  padding: 10px;
+}
+
+.side-preview .mint-preview-canvas-wrap {
+  display: flex;
+  justify-content: center;
+  background: #07080a;
+  padding: 8px;
+  border-radius: 10px;
+  border: 1px solid #222;
+}
+
+.side-preview #previewCanvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  image-rendering: pixelated;
+}
+
+.mint-actions {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.mint-actions button {
+  padding: 8px 10px;
+  cursor: pointer;
+}
+
+@media (max-width: 1450px) {
+  .main {
+    grid-template-columns: 620px 400px;
+  }
+
+  .panel {
+    grid-column: 1 / -1;
+    width: auto;
+  }
+}
+
+@media (max-width: 1050px) {
+  .main {
+    grid-template-columns: 1fr;
+  }
+
+  .arena,
+  #spriteCanvas,
+  .side-preview,
+  .panel {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  #spriteCanvas {
+    height: auto;
+    aspect-ratio: 1 / 1;
+  }
+}
+
+
+/* ==========================================================
+   PATCH 2: 4-column desktop layout
+   Order: Battle Canvas | Deck/Match Tools | Mint Preview | Binder/Actions
+   ========================================================== */
+.pvp-ui {
+  width: 100%;
+  box-sizing: border-box;
+  overflow-x: auto;
+}
+
+.four-column-layout {
+  display: grid;
+  grid-template-columns: 620px 360px 380px minmax(320px, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+
+.arena-column,
+.deck-save-column,
+.side-preview,
+.side-tools {
+  min-width: 0;
+}
+
+.arena-column .arena,
+.arena {
+  width: 600px;
+  flex: none;
+}
+
+#spriteCanvas {
+  display: block;
+  width: 600px;
+  height: 600px;
+  image-rendering: pixelated;
+  background: #05060a;
+  border-radius: 8px;
+}
+
+.deck-save-column,
+.side-tools {
+  width: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.deck-save-column .panel-section,
+.side-tools .panel-section {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.side-preview {
+  width: 360px;
+  max-width: 360px;
+  margin: 0;
+  box-sizing: border-box;
+}
+
+.side-preview #previewCanvas {
+  width: 100%;
+  height: auto;
+}
+
+.side-preview .mint-preview-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.side-preview .mint-preview-actions button {
+  flex: 1;
+  min-width: 0;
+}
+
+.quick-actions-section .mint-actions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  min-width: 0;
+}
+
+.quick-actions-section .mint-actions button,
+.deck-builder-section button,
+.deck-panel button {
+  width: 100%;
+  flex: none;
+}
+
+.deck-builder-section #deckModeBtn {
+  margin-bottom: 10px;
+}
+
+.deck-panel {
+  display: none;
+  max-height: 280px;
+  overflow: auto;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.deck-panel:not(:empty) {
+  display: block;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255,255,255,0.1);
+}
+
+.deck-head,
+.deck-actions,
+.deck-list,
+.deck-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.deck-head input {
+  width: 100%;
+  box-sizing: border-box;
+  background: rgba(0,0,0,0.35);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 10px;
+  padding: 8px 10px;
+}
+
+.deck-count {
+  opacity: .85;
+}
+
+.deck-item {
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
+  padding: 8px;
+  background: rgba(0,0,0,0.2);
+}
+
+/* Binder now opens inside the right-most tools column instead of below the game. */
+.side-tools .binder {
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 0;
+  max-height: 680px;
+  overflow: auto;
+}
+
+.side-tools .binder-header {
+  display: block;
+}
+
+.side-tools .binder-title,
+.side-tools .binder-count {
+  margin-bottom: 8px;
+}
+
+.side-tools .binder-toolbar {
+  padding: 10px;
+  margin: 10px 0;
+}
+
+.side-tools .binder-row,
+.side-tools .stats-row {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.side-tools .binder-field,
+.side-tools .binder-field.grow {
+  width: 100%;
+  min-width: 0;
+}
+
+.side-tools .rarity-chips {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.side-tools .chip {
+  width: 100%;
+  text-align: center;
+}
+
+.side-tools .binder-actions {
+  width: 100%;
+  margin-left: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.side-tools .binder-grid {
+  grid-template-columns: repeat(auto-fill, minmax(105px, 1fr));
+  gap: 8px;
+}
+
+
+/* Moved battle controls, duel breakdown, and log into column 2. */
+.deck-save-column .logwrap {
+  flex: none;
+}
+
+.deck-save-column .log {
+  height: 180px;
+}
+
+.side-tools {
+  align-self: start;
+}
+
+@media (max-width: 1700px) {
+  .four-column-layout {
+    grid-template-columns: 620px 360px 380px 340px;
+  }
+}
+
+@media (max-width: 1420px) {
+  .four-column-layout {
+    grid-template-columns: 620px 340px;
+  }
+
+  .side-preview,
+  .side-tools {
+    width: auto;
+    max-width: none;
+  }
+}
+
+@media (max-width: 980px) {
+  .four-column-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .arena-column .arena,
+  .arena,
+  #spriteCanvas,
+  .deck-save-column,
+  .side-preview,
+  .side-tools {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  #spriteCanvas {
+    height: auto;
+    aspect-ratio: 1 / 1;
+  }
+}
+
+</style>
+
+
+
+<script>
+  function pixelsChecksum(pixels) {
+  // stable checksum for shape; ignores actual colors mostly
+  let h = 2166136261 >>> 0;
+  for (let y = 0; y < pixels.length; y++) {
+    for (let x = 0; x < pixels[y].length; x++) {
+      const v = pixels[y][x] ? 1 : 0; // only presence/shape
+      h ^= (v + (x << 8) + (y << 16)) >>> 0;
+      h = Math.imul(h, 16777619) >>> 0;
+    }
+  }
+  return h.toString(16);
+}
+ 
+function dumpBossDNA(boss) {
+  return {
+    seed: boss.seed,
+    type: boss.type,
+    paletteIndex: boss.paletteIndex,
+    variant: boss.variant,
+    name: boss.name,
+    rarityKey: boss.rarity?.key,
+    stats: boss.stats
+  };
+}
+
+window.deckBuilder = {
+  enabled: false,
+  maxSize: 20,              // change as needed
+  selected: new Map(),      // cardHash -> qty (or boolean)
+  activeDeckName: "My Deck",
+};
+
+
+// ==========================================================
+// FULL INTEGRATED VERSION (your current code + SAVE/LOAD DECK)
+// Adds (on top of what you already have):
+// ✅ Seeded RNG so saved decks reload with the SAME art + rarity +  stats
+// ✅ Save/Load deck to localStorage (PlayerA / PlayerB / custom name)
+// ✅ Export/Import deck as .json file (shareable)
+// ✅ Fixes the accidental nested function in setBreakdown()
+// ✅ Makes pickRarity(), randInt(), chance(), randomFrom() deterministic via per-boss RNG
+//
+// HOW TO USE (after paste):
+//   // generate a deck and save
+//   const deckA = generateDeck(20); saveDeckToLocal(deckA, "PlayerA");
+//   // load later
+//   const loadedA = loadDeckFromLocal("PlayerA");
+//
+// Optional: add buttons in UI and call:
+//   saveMatchDecks(); loadMatchDecks(); exportMatchDecks(); importMatchDecksFromFiles(...)
+// ============================================================
+
+const canvas = document.getElementById("spriteCanvas");
+const ctx = canvas.getContext("2d");
+ctx.imageSmoothingEnabled = false;
+const SCALE = 11;
+
+// ===== PIXEL BOSS "CARD" GENERATOR (rarity neon borders + palette-based stat system) =====
+// Adds:
+// 1) RARITY system with glossy neon frame colors (Common -> Mythic)
+// 2) Stats generated from BOTH rarity + the boss palette (mainly ACCENT/GLOW hue)
+// 3) Footer label shows rarity + element + level
+
+const CHAR_BOSS_W = 16;
+const CHAR_BOSS_H = 20;
+
+const CHAR_BOSS_TYPES = [
+  "orc_warlord",
+  "dragonkin",
+  "fallen_angel",
+  "forest_fairy",
+  "high_elf_champion",
+  "demon_knight",
+  "skeleton_lich",
+  "stone_golem",
+
+  // NEW TYPES
+  "cyber_samurai",
+  "void_assassin",
+  "neon_witch",
+  "storm_titan",
+  "crystal_seraph",
+  "toxic_alchemist"
+];
+ 
+
+// 5-color palettes: [TRANSPARENT, BODY, ACCENT, GLOW, DETAIL]
+const CHAR_BOSS_PALETTES = {
+  orc_warlord: [
+    ["#00000000", "#1b5e20", "#00e756", "#ffd166", "#000000"],
+    ["#00000000", "#2d6a4f", "#95d5b2", "#ffa300", "#000000"],
+    ["#00000000", "#3a5a40", "#a3b18a", "#ff004d", "#000000"]
+  ],
+  dragonkin: [
+    ["#00000000", "#ab5236", "#ffa300", "#ff004d", "#000000"],
+    ["#00000000", "#6e44ff", "#b892ff", "#00f5d4", "#000000"],
+    ["#00000000", "#1d2b53", "#29adff", "#00e756", "#000000"]
+  ],
+  fallen_angel: [
+    ["#00000000", "#f2f2f2", "#8d99ae", "#ffd500", "#000000"],
+    ["#00000000", "#c7f0ff", "#3a86ff", "#ffd166", "#000000"],
+    ["#00000000", "#e5e5e5", "#6c757d", "#00f5d4", "#000000"]
+  ],
+  forest_fairy: [
+    ["#00000000", "#95d5b2", "#2d6a4f", "#ff77e9", "#000000"],
+    ["#00000000", "#a3b18a", "#386641", "#ffd166", "#000000"],
+    ["#00000000", "#d9f2ff", "#6ecbff", "#f72585", "#000000"]
+  ],
+  high_elf_champion: [
+    ["#00000000", "#f8f8f8", "#b892ff", "#00f5d4", "#000000"],
+    ["#00000000", "#fff1e8", "#ffa300", "#29adff", "#000000"],
+    ["#00000000", "#f2e8cf", "#84a98c", "#ffd500", "#000000"]
+  ],
+  demon_knight: [
+    ["#00000000", "#780000", "#c1121f", "#ff004d", "#000000"],
+    ["#00000000", "#2b2d42", "#ef233c", "#b892ff", "#000000"],
+    ["#00000000", "#1d1f21", "#ff004d", "#ffa300", "#000000"]
+  ],
+  skeleton_lich: [
+    ["#00000000", "#c2c3c7", "#606060", "#00f5d4", "#000000"],
+    ["#00000000", "#e5e5e5", "#6c757d", "#b892ff", "#000000"],
+    ["#00000000", "#fff1e8", "#888888", "#29adff", "#000000"]
+  ],
+  stone_golem: [
+    ["#00000000", "#606060", "#c2c3c7", "#ffa300", "#000000"],
+    ["#00000000", "#5f574f", "#c0c0c0", "#00e756", "#000000"],
+    ["#00000000", "#3c3c3c", "#888888", "#29adff", "#000000"]
+  ],
+  cyber_samurai: [
+    ["#00000000", "#10131a", "#29adff", "#00f5d4", "#000000"],
+    ["#00000000", "#1d1f21", "#b892ff", "#00e756", "#000000"],
+    ["#00000000", "#0b0d10", "#ffa300", "#ff55ff", "#000000"]
+  ],
+  void_assassin: [
+    ["#00000000", "#1b1730", "#6e44ff", "#ff55ff", "#000000"],
+    ["#00000000", "#101014", "#29adff", "#b892ff", "#000000"],
+    ["#00000000", "#0b0d10", "#ff004d", "#00f5d4", "#000000"]
+  ],
+  neon_witch: [
+    ["#00000000", "#1d1f21", "#ff55ff", "#29adff", "#000000"],
+    ["#00000000", "#10131a", "#b892ff", "#ffd500", "#000000"],
+    ["#00000000", "#0b0d10", "#00e756", "#ff004d", "#000000"]
+  ],
+  storm_titan: [
+    ["#00000000", "#2b2d42", "#29adff", "#ffd500", "#000000"],
+    ["#00000000", "#1d2b53", "#00f5d4", "#ff55ff", "#000000"],
+    ["#00000000", "#0b0d10", "#6ecbff", "#ffa300", "#000000"]
+  ],
+  crystal_seraph: [
+    ["#00000000", "#f2f2f2", "#bfe8ff", "#00f5d4", "#000000"],
+    ["#00000000", "#fff1e8", "#f1d7ff", "#ffd500", "#000000"],
+    ["#00000000", "#e5e5e5", "#29adff", "#ff55ff", "#000000"]
+  ],
+  toxic_alchemist: [
+    ["#00000000", "#1b2b1f", "#00e756", "#ffd500", "#000000"],
+    ["#00000000", "#0f1f14", "#95d5b2", "#00f5d4", "#000000"],
+    ["#00000000", "#101014", "#00ff9a", "#ff004d", "#000000"]
+  ]
+};
+
+// ===== Card layout (sprite pixels) =====
+const CARD_PAD = 3; // was 2 (adds inner breathing room)
+const CARD_BORDER = 1;
+
+const CARD_TITLE_H = 9; // was 7 (more room for bigger 2-line names)
+const CARD_FOOT_H = 4; // was 3 (footer text more legible)
+const CARD_ART_PAD = 1;
+
+// Derived sizes (these auto-update)
+const CARD_W = CHAR_BOSS_W + CARD_PAD * 2 + CARD_BORDER * 2;
+const CARD_H =
+  CHAR_BOSS_H + CARD_TITLE_H + CARD_FOOT_H + CARD_PAD * 2 + CARD_BORDER * 2;
+
+// ===== SPECIAL NEON PALETTES (rare override) =====
+// 5 colors: [T, BODY, ACCENT, GLOW, DETAIL]
+const SPECIAL_NEON_PALETTES = [
+  {
+    key: "neon_cyberlime",
+    p: ["#00000000", "#0b0d10", "#00e756", "#00ff9a", "#000000"]
+  },
+  {
+    key: "neon_ultraviolet",
+    p: ["#00000000", "#0f0616", "#b892ff", "#ff55ff", "#000000"]
+  },
+  {
+    key: "neon_aquachrome",
+    p: ["#00000000", "#0a1010", "#00f5d4", "#29adff", "#000000"]
+  },
+  {
+    key: "neon_hotmagma",
+    p: ["#00000000", "#140f05", "#ff004d", "#ffa300", "#000000"]
+  },
+  {
+    key: "neon_prismatic",
+    p: ["#00000000", "#10131a", "#29adff", "#ffd500", "#000000"]
+  },
+  {
+    key: "neon_glitch",
+    p: ["#00000000", "#1d1f21", "#ff55ff", "#00f5d4", "#000000"]
+  }
+];
+
+// Chance a boss becomes a Neon Variant (seeded)
+function maybePickSpecialNeon(rng) {
+  // tune this: 0.08 = 8% of bosses get neon override
+  if (rng() < 0.08) return randomFrom(SPECIAL_NEON_PALETTES, rng);
+  return null;
+}
+
+const CARD_COLORS = {
+  bg: "#141318",
+  titleBg: "#1d1f21",
+  artBg: "#0b0d10",
+  footerBg: "#12131a",
+  text: "#ffffff",
+  textShadow: "#000000"
+};
+
+
+// ==============================
+// CONTRAST + CARD THEME HELPERS
+// ==============================
+function clamp01(n) { return Math.max(0, Math.min(1, n)); }
+
+function rgbToHex({ r, g, b }) {
+  const to = (v) => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, "0");
+  return `#${to(r)}${to(g)}${to(b)}`;
+}
+
+function mixHex(a, b, t) {
+  const A = hexToRgb(a), B = hexToRgb(b);
+  const m = (x, y) => x + (y - x) * t;
+  return rgbToHex({ r: m(A.r, B.r), g: m(A.g, B.g), b: m(A.b, B.b) });
+}
+
+function relLum(hex) {
+  const { r, g, b } = hexToRgb(hex);
+  const f = (c) => {
+    c /= 255;
+    return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+  };
+  const R = f(r), G = f(g), B = f(b);
+  return 0.2126 * R + 0.7152 * G + 0.0722 * B;
+}
+
+function contrastRatio(hexA, hexB) {
+  const L1 = relLum(hexA), L2 = relLum(hexB);
+  const hi = Math.max(L1, L2), lo = Math.min(L1, L2);
+  return (hi + 0.05) / (lo + 0.05);
+}
+
+// Picks a background that contrasts with BOTH the sprite body and the black outline.
+function pickArtBgForBoss(boss) {
+  const body = boss.BODY || "#888888";
+  const accent = boss.ACCENT || "#29adff";
+  const outline = boss.OUTLINE || "#000000";
+
+  // Start with your current dark, then offer slightly lighter "card blacks"
+  const candidates = [
+    "#07080c",
+    "#0b0d10",
+    "#10131a",
+    "#141826",
+    "#1a2033"
+  ];
+
+  // Score = readable outline + readable body + not too close to accent
+  let best = candidates[0];
+  let bestScore = -Infinity;
+
+  for (const bg of candidates) {
+    const cOutline = contrastRatio(outline, bg); // black vs bg
+    const cBody = contrastRatio(body, bg);
+    const cAccent = contrastRatio(accent, bg);
+
+    // Prefer: outline >= 3, body >= 2.4, accent >= 2.0
+    // Also prefer mid-range (not too bright overall)
+    const lum = relLum(bg);
+
+    const score =
+      Math.min(cOutline, 6) * 2.2 +
+      Math.min(cBody, 6) * 1.6 +
+      Math.min(cAccent, 6) * 0.6 -
+      lum * 1.2;
+
+    if (score > bestScore) {
+      bestScore = score;
+      best = bg;
+    }
+  }
+
+  return best;
+}
+
+// A "mat/trim" line that avoids boss palette collisions.
+// Derive from rarity (UI identity) not boss palette (art identity).
+function pickArtTrimForBoss(boss, artBg) {
+  const glow = boss?.rarity?.colors?.glow || "#00f5d4";
+  const inner = boss?.rarity?.colors?.inner || "#bfe8ff";
+
+  // Start from a mix of glow->inner, then pull toward bg so it's not screaming
+  let trim = mixHex(glow, inner, 0.55);
+  trim = mixHex(trim, artBg, 0.45);
+
+  // If trim is too close to bg, push it away
+  if (contrastRatio(trim, artBg) < 2.0) {
+    const toward = relLum(artBg) < 0.12 ? "#ffffff" : "#000000";
+    trim = mixHex(trim, toward, 0.35);
+  }
+  return trim;
+}
+
+// Build a per-card theme (deterministic)
+function getCardTheme(boss) {
+  const artBg = pickArtBgForBoss(boss);
+  const artTrim = pickArtTrimForBoss(boss, artBg);
+
+  // Halo is rarity glow, slightly softened into inner (looks clean)
+  const glow = boss?.rarity?.colors?.glow || "#00f5d4";
+  const inner = boss?.rarity?.colors?.inner || "#bfe8ff";
+  const halo = mixHex(glow, inner, 0.35);
+
+  // Section dividers should be neutral, not boss palette
+  const divider = mixHex(CARD_COLORS.bg, "#000000", 0.35);
+
+  return { artBg, artTrim, halo, divider };
+}
+
+// Draw a 1px (pixel-space) trim INSIDE the art box
+function drawArtTrim(ctx, x, y, w, h, trimColor) {
+  ctx.fillStyle = trimColor;
+  // top/bottom
+  ctx.fillRect(x, y, w, SCALE);
+  ctx.fillRect(x, y + h - SCALE, w, SCALE);
+  // left/right
+  ctx.fillRect(x, y, SCALE, h);
+  ctx.fillRect(x + w - SCALE, y, SCALE, h);
+}
+
+// Halo behind the sprite so black outline never disappears
+function drawSpriteHalo(ctx, pixels, xOffset, yOffset, haloColor) {
+  ctx.fillStyle = haloColor;
+
+  const h = pixels.length;
+  const w = pixels[0].length;
+
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      if (!pixels[y][x]) continue;
+
+      // 4-neighbor halo where empty
+      const n = [
+        [x - 1, y],
+        [x + 1, y],
+        [x, y - 1],
+        [x, y + 1]
+      ];
+
+      for (const [nx, ny] of n) {
+        if (ny < 0 || ny >= h || nx < 0 || nx >= w) continue;
+        if (pixels[ny][nx]) continue;
+        ctx.fillRect(xOffset + nx * SCALE, yOffset + ny * SCALE, SCALE, SCALE);
+      }
+    }
+  }
+}
+
+
+
+
+const CARD_SCHEMA_VERSION = 1;
+const CARD_SET = "GENESIS";
+
+function buildCardDNAFromBoss(boss) {
+  return {
+    schemaVersion: CARD_SCHEMA_VERSION,
+    set: CARD_SET,
+    seed: boss.seed,
+    type: boss.type,
+    paletteIndex: boss.paletteIndex,
+    rarityKey: boss.rarity?.key || "common",
+    variantKey: boss.variant || "base",
+    name: boss.name || "Unknown",
+    stats: boss.stats || {},
+    pixels: boss.pixels,
+    backstory: boss.backstory || ""    
+  };
+}
+
+// IMPORTANT: deterministic stringification for hashing
+function stableStringify(obj) {
+  const allKeys = [];
+  JSON.stringify(obj, (k, v) => (allKeys.push(k), v));
+  allKeys.sort();
+  return JSON.stringify(obj, allKeys);
+}
+async function computeCardHash(cardDNA) {
+  // Only hash immutable DNA fields (including stats since Genesis snapshots are immutable)
+  return sha256Hex(stableStringify(cardDNA));
+}
+
+async function bossToCardAsync(boss) {
+  const dna = buildCardDNAFromBoss(boss);
+  const cardHash = await computeCardHash(dna);
+
+  return {
+    id: crypto?.randomUUID?.() || `${Date.now()}_${Math.random()}`,
+    boss,
+    dna,
+    cardHash,
+    rarityKey: dna.rarityKey,
+    rarityPower: RARITY_POWER[dna.rarityKey] || 1,
+    level: dna.stats?.level ?? 1,
+    element: dna.stats?.element?.key || "nature",
+    variantKey: dna.variantKey,
+    name: dna.name,
+    type: dna.type,
+    stats: dna.stats
+  };
+}
+
+// ============================================================
+// ✅ SAVE/LOAD SUPPORT: SEEDED RNG HELPERS (Step 1)
+// ============================================================
+function xmur3(str) {
+  let h = 1779033703 ^ str.length;
+  for (let i = 0; i < str.length; i++) {
+    h = Math.imul(h ^ str.charCodeAt(i), 3432918353);
+    h = (h << 13) | (h >>> 19);
+  }
+  return function () {
+    h = Math.imul(h ^ (h >>> 16), 2246822507);
+    h = Math.imul(h ^ (h >>> 13), 3266489909);
+    return (h ^= h >>> 16) >>> 0;
+  };
+}
+
+function sfc32(a, b, c, d) {
+  return function () {
+    a >>>= 0;
+    b >>>= 0;
+    c >>>= 0;
+    d >>>= 0;
+    let t = (a + b) | 0;
+    a = b ^ (b >>> 9);
+    b = (c + (c << 3)) | 0;
+    c = (c << 21) | (c >>> 11);
+    d = (d + 1) | 0;
+    t = (t + d) | 0;
+    c = (c + t) | 0;
+    return (t >>> 0) / 4294967296;
+  };
+}
+
+function makeRng(seedStr) {
+  const seed = xmur3(String(seedStr));
+  return sfc32(seed(), seed(), seed(), seed());
+}
+
+function makeSeed() {
+  return crypto?.randomUUID?.() || `${Date.now()}_${Math.random()}`;
+}
+
+// ============================================================
+// ===== RARITY (glossy neon palette)
+// ============================================================
+const RARITIES = [
+  {
+    key: "common",
+    name: "COMMON",
+    weight: 46,
+    mult: 1.0,
+    colors: {
+      outer: "#101014",
+      mid: "#6b7280",
+      inner: "#d1d5db",
+      glow: "#9ca3af",
+      gloss: "#ffffff"
+    }
+  },
+  {
+    key: "uncommon",
+    name: "UNCOMMON",
+    weight: 26,
+    mult: 1.1,
+    colors: {
+      outer: "#0a1010",
+      mid: "#00e756",
+      inner: "#b8ffcc",
+      glow: "#00ff9a",
+      gloss: "#eafff6"
+    }
+  },
+  {
+    key: "rare",
+    name: "RARE",
+    weight: 14,
+    mult: 1.25,
+    colors: {
+      outer: "#0a0c12",
+      mid: "#29adff",
+      inner: "#bfe8ff",
+      glow: "#00f5ff",
+      gloss: "#eaf7ff"
+    }
+  },
+  {
+    key: "epic",
+    name: "EPIC",
+    weight: 8,
+    mult: 1.45,
+    colors: {
+      outer: "#0f0616",
+      mid: "#b892ff",
+      inner: "#f1d7ff",
+      glow: "#ff55ff",
+      gloss: "#fff0ff"
+    }
+  },
+  {
+    key: "legendary",
+    name: "LEGENDARY",
+    weight: 4,
+    mult: 1.7,
+    colors: {
+      outer: "#140f05",
+      mid: "#ffd500",
+      inner: "#fff2b3",
+      glow: "#ffa300",
+      gloss: "#fffbe6"
+    }
+  },
+  {
+    key: "mythic",
+    name: "MYTHIC",
+    weight: 2,
+    mult: 2.05,
+    colors: {
+      outer: "#12030a",
+      mid: "#ff004d",
+      inner: "#ffd0dd",
+      glow: "#00f5d4",
+      gloss: "#fff1f6"
+    }
+  }
+];
+
+// ✅ Seedable rarity picker
+function pickRarity(rng = Math.random) {
+  const total = RARITIES.reduce((s, r) => s + r.weight, 0);
+  let roll = rng() * total;
+  for (const r of RARITIES) {
+    roll -= r.weight;
+    if (roll <= 0) return r;
+  }
+  return RARITIES[0];
+}
+
+// ============================================================
+// ===== Random name generator (now seedable)
+// ============================================================
+const NAME_BITS = {
+  starts: [
+    "Ara",
+    "Bel",
+    "Vor",
+    "Xan",
+    "Zy",
+    "Ka",
+    "Mor",
+    "Syl",
+    "Eld",
+    "Ny",
+    "Dra",
+    "Grim",
+    "Thal",
+    "Rho",
+    "Vel"
+  ],
+  mids: [
+    "an",
+    "or",
+    "e",
+    "i",
+    "a",
+    "u",
+    "ra",
+    "lo",
+    "shi",
+    "dra",
+    "mir",
+    "zor",
+    "ven",
+    "kal",
+    "th"
+  ],
+  ends: [
+    "dor",
+    "th",
+    "rik",
+    "wyn",
+    "mir",
+    "gorn",
+    "vash",
+    "riel",
+    "nox",
+    "dane",
+    "lith",
+    "gar",
+    "ra",
+    "zai",
+    "mar"
+  ],
+  epithetsCommon: [
+    "the Bold",
+    "the Cursed",
+    "the Unbroken",
+    "the Merciless",
+    "the Ancient",
+    "the Vengeful",
+    "the Radiant",
+    "the Hollow"
+  ],
+  epithetsByType: {
+    orc_warlord: ["Skullsplitter", "Warborn", "Ironjaw", "Bloodhowl"],
+    dragonkin: ["Ashscale", "Flameheart", "Sky-Terror", "Emberclaw"],
+    fallen_angel: [
+      "the Forsaken",
+      "the Pale Flame",
+      "Light’s Ruin",
+      "the Silent Choir"
+    ],
+    forest_fairy: ["Glimmerwing", "Dewcaller", "Thornkissed", "Moonpetal"],
+    high_elf_champion: ["Starblade", "Dawnsworn", "Silver Oath", "Aurelian"],
+    demon_knight: ["Hellbound", "the Red Oath", "Chainsworn", "Nightbrand"],
+    skeleton_lich: ["Bone-Sage", "Gravechant", "the Cold Crown", "Soulkeeper"],
+    stone_golem: ["Stoneheart", "Runebound", "the Granite King", "Ironquartz"]
+  }
+};
+
+function randomFrom(arr, rng = Math.random) {
+  return arr[Math.floor(rng() * arr.length)];
+}
+function chance(p, rng = Math.random) {
+  return rng() < p;
+}
+
+function generateBossName(type, rng = Math.random) {
+  const core =
+    randomFrom(NAME_BITS.starts, rng) +
+    randomFrom(NAME_BITS.mids, rng) +
+    randomFrom(NAME_BITS.ends, rng);
+  const fancyCore = chance(0.45, rng)
+    ? `${core} ${randomFrom(["I", "II", "III", "IV", "V"], rng)}`
+    : core;
+
+  const pool = (NAME_BITS.epithetsByType[type] || []).concat(
+    NAME_BITS.epithetsCommon
+  );
+  const epithet = chance(0.75, rng)
+    ? randomFrom(pool, rng)
+    : randomFrom(NAME_BITS.epithetsCommon, rng);
+
+  if (chance(0.55, rng)) return `${fancyCore}, ${epithet}`;
+  if (/^the\b/i.test(epithet)) return `${fancyCore} ${epithet}`;
+  return `${fancyCore} the ${epithet}`;
+}
+
+
+
+// ============================================================
+// ===== FIX HELPERS (unchanged)
+// ============================================================
+function getPixelBounds(pixels) {
+  let minX = Infinity,
+    minY = Infinity,
+    maxX = -Infinity,
+    maxY = -Infinity;
+  const h = pixels.length;
+  const w = pixels[0].length;
+
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      if (pixels[y][x]) {
+        if (x < minX) minX = x;
+        if (y < minY) minY = y;
+        if (x > maxX) maxX = x;
+        if (y > maxY) maxY = y;
+      }
+    }
+  }
+  if (minX === Infinity)
+    return { minX: 0, minY: 0, maxX: 0, maxY: 0, w: 1, h: 1 };
+  return { minX, minY, maxX, maxY, w: maxX - minX + 1, h: maxY - minY + 1 };
+}
+
+function centerText(ctx, text, xCenter, y) {
+  const w = ctx.measureText(text).width;
+  const x = Math.round(xCenter - w / 2);
+
+  ctx.fillStyle = CARD_COLORS.textShadow;
+  ctx.fillText(text, x + 1, y + 1);
+
+  ctx.fillStyle = CARD_COLORS.text;
+  ctx.fillText(text, x, y);
+}
+
+function splitTitleTwoLines(text) {
+  const candidates = [];
+
+  const comma = text.indexOf(",");
+  if (comma > 4 && comma < text.length - 4) candidates.push(comma + 1);
+
+  const theIdx = text.toLowerCase().indexOf(" the ");
+  if (theIdx > 4 && theIdx < text.length - 6) candidates.push(theIdx);
+
+  for (let i = 0; i < text.length; i++) if (text[i] === " ") candidates.push(i);
+  for (let i = 0; i < text.length; i++)
+    if (text[i] === "-") candidates.push(i + 1);
+
+  if (candidates.length === 0) {
+    const mid = Math.floor(text.length / 2);
+    return [text.slice(0, mid).trim(), text.slice(mid).trim()];
+  }
+
+  const mid = text.length / 2;
+  let best = candidates[0];
+  let bestDist = Math.abs(best - mid);
+
+  for (const c of candidates) {
+    const d = Math.abs(c - mid);
+    if (d < bestDist) {
+      best = c;
+      bestDist = d;
+    }
+  }
+
+  return [text.slice(0, best).trim(), text.slice(best).trim()];
+}
+
+function drawWrappedTitle(
+  ctx,
+  text,
+  xCenter,
+  yTop,
+  innerW,
+  boxH,
+  baseFontPx,
+  minFontPx
+) {
+  let fontPx = baseFontPx;
+
+  while (fontPx >= minFontPx) {
+    ctx.font = `${fontPx}px monospace`;
+
+    if (ctx.measureText(text).width <= innerW) {
+      ctx.textBaseline = "middle";
+      const y = Math.round(yTop + boxH / 2);
+      centerText(ctx, text, xCenter, y);
+      return;
+    }
+
+    const [l1, l2] = splitTitleTwoLines(text);
+    const w1 = ctx.measureText(l1).width;
+    const w2 = ctx.measureText(l2).width;
+
+    const gap = Math.max(1, Math.floor(fontPx * 0.15));
+    const totalH = fontPx * 2 + gap;
+
+    if (w1 <= innerW && w2 <= innerW && totalH <= boxH) {
+      ctx.textBaseline = "middle";
+      const blockCenterY = yTop + boxH / 2;
+      const y1 = Math.round(blockCenterY - fontPx / 2 - gap / 2);
+      const y2 = Math.round(blockCenterY + fontPx / 2 + gap / 2);
+      centerText(ctx, l1, xCenter, y1);
+      centerText(ctx, l2, xCenter, y2);
+      return;
+    }
+
+    fontPx--;
+  }
+
+  ctx.font = `${minFontPx}px monospace`;
+  ctx.textBaseline = "middle";
+  const [l1, l2] = splitTitleTwoLines(text);
+  const gap = Math.max(1, Math.floor(minFontPx * 0.15));
+  const blockCenterY = yTop + boxH / 2;
+  const y1 = Math.round(blockCenterY - minFontPx / 2 - gap / 2);
+  const y2 = Math.round(blockCenterY + minFontPx / 2 + gap / 2);
+  centerText(ctx, l1, xCenter, y1);
+  centerText(ctx, l2, xCenter, y2);
+}
+
+function drawBossCard_NoText(ctx, boss, cardX, cardY) {
+  const cardPxW = CARD_W * SCALE;
+  const cardPxH = CARD_H * SCALE;
+
+  const theme = getCardTheme(boss);
+
+  ctx.fillStyle = CARD_COLORS.bg;
+  ctx.fillRect(cardX, cardY, cardPxW, cardPxH);
+
+  drawRarityFrame(ctx, cardX, cardY, cardPxW, cardPxH, boss.rarity.colors);
+
+  const titleX = cardX + (CARD_BORDER + CARD_PAD) * SCALE;
+  const titleY = cardY + (CARD_BORDER + CARD_PAD) * SCALE;
+  const titleW = (CARD_W - 2 * (CARD_BORDER + CARD_PAD)) * SCALE;
+  const titleH = CARD_TITLE_H * SCALE;
+
+  ctx.fillStyle = CARD_COLORS.titleBg;
+  ctx.fillRect(titleX, titleY, titleW, titleH);
+
+  // (optional) a divider line below title so sections don't mush together
+  ctx.fillStyle = theme.divider;
+  ctx.fillRect(titleX, titleY + titleH, titleW, SCALE);
+
+  drawPowerWatermark(ctx, boss, titleX, titleY, titleW, titleH, SCALE);
+
+  const artX = titleX;
+  const artY = titleY + titleH + SCALE;
+  const artW = titleW;
+  const artH = (CHAR_BOSS_H + CARD_ART_PAD * 2) * SCALE;
+
+  // dynamic art bg
+  ctx.fillStyle = theme.artBg;
+  ctx.fillRect(artX, artY, artW, artH);
+
+  // inner mat/trim (prevents palette collisions)
+  drawArtTrim(ctx, artX, artY, artW, artH, theme.artTrim);
+
+  const footY = artY + artH + SCALE;
+  const footH = CARD_FOOT_H * SCALE;
+
+  // divider above footer too
+  ctx.fillStyle = theme.divider;
+  ctx.fillRect(titleX, footY - SCALE, titleW, SCALE);
+
+  ctx.fillStyle = CARD_COLORS.footerBg;
+  ctx.fillRect(titleX, footY, titleW, footH);
+
+  // sprite placement (unchanged)
+  const bounds = getPixelBounds(boss.pixels);
+  const artWPx = CARD_W - 2 * (CARD_BORDER + CARD_PAD);
+  const artHPx = CHAR_BOSS_H + CARD_ART_PAD * 2;
+
+  const artLocalX = CARD_BORDER + CARD_PAD;
+  const artLocalY = CARD_BORDER + CARD_PAD + CARD_TITLE_H + 1;
+
+  const innerWPx = artWPx - CARD_ART_PAD * 2;
+  const innerHPx = artHPx - CARD_ART_PAD * 2;
+
+  const offsetXPx =
+    artLocalX + CARD_ART_PAD + Math.floor((innerWPx - bounds.w) / 2) - bounds.minX;
+  const offsetYPx =
+    artLocalY + CARD_ART_PAD + Math.floor((innerHPx - bounds.h) / 2) - bounds.minY;
+
+  const spriteX = cardX + offsetXPx * SCALE;
+  const spriteY = cardY + offsetYPx * SCALE;
+
+  // HALO pass first (fixes black outline on dark bg)
+  drawSpriteHalo(ctx, boss.pixels, spriteX, spriteY, theme.halo);
+
+  // then actual sprite
+  boss.drawSprite(ctx, spriteX, spriteY);
+}
+
+
+function drawBossCard_TextOnly(ctx, boss, cardX, cardY, scaleForText = SCALE) {
+  const titleX = cardX + (CARD_BORDER + CARD_PAD) * scaleForText;
+  const titleY = cardY + (CARD_BORDER + CARD_PAD) * scaleForText;
+  const titleW = (CARD_W - 2 * (CARD_BORDER + CARD_PAD)) * scaleForText;
+  const titleH = CARD_TITLE_H * scaleForText;
+
+  // Title
+  const xCenter = titleX + titleW / 2;
+  const innerTextW = titleW - 4 * scaleForText;
+
+  // Make fonts proportional to preview scale, but integer pixels
+  const baseFont = Math.max(12, Math.floor(scaleForText * 1.35));
+  const minFont = Math.max(10, Math.floor(scaleForText * 1.15));
+
+  ctx.imageSmoothingEnabled = false;
+  drawWrappedTitle(
+    ctx,
+    boss.name,
+    xCenter,
+    titleY,
+    innerTextW,
+    titleH,
+    baseFont,
+    minFont
+  );
+
+  // Footer
+  const artH = (CHAR_BOSS_H + CARD_ART_PAD * 2) * scaleForText;
+  const artY = titleY + titleH + scaleForText;
+  const footY = artY + artH + scaleForText;
+  const footH = CARD_FOOT_H * scaleForText;
+
+  const variantTxt = boss.variant
+    ? ` • ${formatVariantLabel(boss.variant)}`
+    : "";
+  const footerLabel = `${boss.rarity.name} • ${boss.stats.element.name}${variantTxt} • LV ${boss.stats.level}`;
+
+  const footInnerW = titleW - 4 * scaleForText;
+  const footBaseFont = Math.max(10, Math.floor(scaleForText * 1.1));
+  const footMinFont = Math.max(9, Math.floor(scaleForText * 0.95));
+
+  drawWrappedFooter(
+    ctx,
+    footerLabel,
+    titleX + titleW / 2,
+    footY,
+    footInnerW,
+    footH,
+    footBaseFont,
+    footMinFont,
+    boss.rarity.colors.glow
+  );
+}
+
+// ============================================================
+// ===== Color helpers (palette -> element) (unchanged)
+// ============================================================
+function hexToRgb(hex) {
+  if (!hex || hex === "#00000000") return { r: 0, g: 0, b: 0, a: 0 };
+  const h = hex.replace("#", "");
+  if (h.length === 8) {
+    const r = parseInt(h.slice(0, 2), 16);
+    const g = parseInt(h.slice(2, 4), 16);
+    const b = parseInt(h.slice(4, 6), 16);
+    const a = parseInt(h.slice(6, 8), 16) / 255;
+    return { r, g, b, a };
+  }
+  const r = parseInt(h.slice(0, 2), 16);
+  const g = parseInt(h.slice(2, 4), 16);
+  const b = parseInt(h.slice(4, 6), 16);
+  return { r, g, b, a: 1 };
+}
+
+function rgbToHsl({ r, g, b }) {
+  r /= 255;
+  g /= 255;
+  b /= 255;
+  const max = Math.max(r, g, b),
+    min = Math.min(r, g, b);
+  let h = 0,
+    s = 0;
+  const l = (max + min) / 2;
+  const d = max - min;
+
+  if (d !== 0) {
+    s = d / (1 - Math.abs(2 * l - 1));
+    switch (max) {
+      case r:
+        h = 60 * (((g - b) / d) % 6);
+        break;
+      case g:
+        h = 60 * ((b - r) / d + 2);
+        break;
+      case b:
+        h = 60 * ((r - g) / d + 4);
+        break;
+    }
+  }
+  if (h < 0) h += 360;
+  return { h, s, l };
+}
+
+function avgHue(hexA, hexB) {
+  const a = rgbToHsl(hexToRgb(hexA));
+  const b = rgbToHsl(hexToRgb(hexB));
+  let h1 = a.h,
+    h2 = b.h;
+  if (Math.abs(h1 - h2) > 180) {
+    if (h1 < h2) h1 += 360;
+    else h2 += 360;
+  }
+  return ((h1 + h2) / 2) % 360;
+}
+
+function elementFromHue(h) {
+  if (h < 15 || h >= 345)
+    return { key: "blood", name: "BLOOD", focus: ["atk", "crit"] };
+  if (h >= 15 && h < 50)
+    return { key: "inferno", name: "INFERNO", focus: ["atk", "spd"] };
+  if (h >= 50 && h < 85)
+    return { key: "radiant", name: "RADIANT", focus: ["mag", "crit"] };
+  if (h >= 85 && h < 150)
+    return { key: "nature", name: "NATURE", focus: ["hp", "def"] };
+  if (h >= 150 && h < 205)
+    return { key: "frost", name: "FROST", focus: ["def", "spd"] };
+  if (h >= 205 && h < 270)
+    return { key: "arcane", name: "ARCANE", focus: ["mag", "spd"] };
+  return { key: "void", name: "VOID", focus: ["mag", "def"] };
+}
+
+// ============================================================
+// ===== Stat generation (rarity + palette) (now seedable)
+// ============================================================
+function clamp(n, a, b) {
+  return Math.max(a, Math.min(b, n));
+}
+function randInt(a, b, rng = Math.random) {
+  return Math.floor(a + rng() * (b - a + 1));
+}
+
+function generateBossStats({ type, palette, rarity, rng = Math.random }) {
+  const [, body, accent, glow] = palette;
+  const h = avgHue(accent, glow);
+  const element = elementFromHue(h);
+
+  const baseLevel = randInt(8, 14, rng);
+  const rarityBonus =
+    {
+      common: 0,
+      uncommon: 2,
+      rare: 4,
+      epic: 7,
+      legendary: 10,
+      mythic: 14
+    }[rarity.key] ?? 0;
+
+  const level = baseLevel + rarityBonus;
+  const budget = Math.round(level * 14 * rarity.mult);
+
+  let stats = {
+    level,
+    hp: Math.round(60 + level * 10 * rarity.mult),
+    atk: Math.round(10 + level * 2.2 * rarity.mult),
+    def: Math.round(8 + level * 2.0 * rarity.mult),
+    mag: Math.round(8 + level * 2.0 * rarity.mult),
+    spd: Math.round(8 + level * 1.6 * rarity.mult),
+    crit: clamp(
+      Math.round(5 + level * 0.6 + (rarity.key === "mythic" ? 6 : 0)),
+      5,
+      40
+    ),
+    resist: clamp(
+      Math.round(5 + level * 0.5 + (rarity.key === "legendary" ? 4 : 0)),
+      5,
+      35
+    )
+  };
+
+  const focus = element.focus;
+  const spread = ["hp", "atk", "def", "mag", "spd"];
+  const weights = {};
+  for (const k of spread) weights[k] = 1;
+  for (const f of focus) weights[f] += 2;
+
+  const typeBias =
+    {
+      orc_warlord: { atk: 2, hp: 1 },
+      dragonkin: { atk: 2, mag: 1 },
+      fallen_angel: { mag: 2, spd: 1 },
+      forest_fairy: { spd: 2, mag: 1 },
+      high_elf_champion: { spd: 1, def: 1, mag: 1 },
+      demon_knight: { atk: 2, def: 1 },
+      skeleton_lich: { mag: 2, def: 1 },
+      stone_golem: { def: 2, hp: 2 },
+      cyber_samurai: { spd: 2, atk: 1 },
+      void_assassin: { spd: 2, crit: 1 },
+      neon_witch: { mag: 2, spd: 1 },
+      storm_titan: { def: 2, atk: 1 },
+      crystal_seraph: { mag: 1, def: 1, hp: 1 },
+      toxic_alchemist: { mag: 1, atk: 1, spd: 1 }
+    }[type] || {};
+
+  for (const k in typeBias) weights[k] = (weights[k] || 1) + typeBias[k];
+
+  const baselineValue =
+    stats.hp / 6 + stats.atk + stats.def + stats.mag + stats.spd;
+  let remaining = Math.max(0, Math.round(budget - baselineValue));
+
+  const keys = Object.keys(weights);
+  function pickWeighted() {
+    const sum = keys.reduce((s, k) => s + weights[k], 0);
+    let r = rng() * sum;
+    for (const k of keys) {
+      r -= weights[k];
+      if (r <= 0) return k;
+    }
+    return keys[0];
+  }
+
+  while (remaining > 0) {
+    const k = pickWeighted();
+    const step = k === "hp" ? randInt(6, 14, rng) : randInt(1, 3, rng);
+
+    if (k === "hp") stats.hp += step;
+    else stats[k] += step;
+
+    remaining -= k === "hp" ? Math.round(step / 6) : step;
+  }
+
+  const affixPools = {
+    common: ["Rugged", "Worn", "Seasoned"],
+    uncommon: ["Spry", "Blessed", "Venomkissed"],
+    rare: ["Arc-Forged", "Stormbound", "Frostmarked"],
+    epic: ["Void-Touched", "Starwrought", "Bloodcrowned"],
+    legendary: ["Dawnsworn", "Worldbreaker", "Eclipsed"],
+    mythic: ["Reality-Rending", "Godshard", "Infinity-Sigil"]
+  };
+
+  const affix = chance(0.7, rng)
+    ? randomFrom(affixPools[rarity.key] || affixPools.common, rng)
+    : null;
+
+  return {
+    rarity: { key: rarity.key, name: rarity.name, mult: rarity.mult },
+    element,
+    affix,
+    ...stats
+  };
+}
+
+// ============================================================
+// POWER SCORE (uses stats; stays simple + fast)
+// ============================================================
+
+// Tunables (keep simple; HP is down-weighted so it doesn't dominate)
+const POWER_WEIGHTS = {
+  hpDiv: 12, // hp contribution = hp / hpDiv
+  atk: 1.25,
+  mag: 1.25,
+  def: 1.1,
+  spd: 1.05,
+  crit: 0.6,
+  resist: 0.5
+};
+
+function computePowerScore(stats) {
+  if (!stats) return 0;
+  const hp = stats.hp ?? 0;
+  const atk = stats.atk ?? 0;
+  const mag = stats.mag ?? 0;
+  const def = stats.def ?? 0;
+  const spd = stats.spd ?? 0;
+  const crit = stats.crit ?? 0;
+  const resist = stats.resist ?? 0;
+
+  const raw =
+    hp / POWER_WEIGHTS.hpDiv +
+    atk * POWER_WEIGHTS.atk +
+    mag * POWER_WEIGHTS.mag +
+    def * POWER_WEIGHTS.def +
+    spd * POWER_WEIGHTS.spd +
+    crit * POWER_WEIGHTS.crit +
+    resist * POWER_WEIGHTS.resist;
+
+  // integer score = easy UI + comparisons
+  return Math.max(0, Math.round(raw));
+}
+
+// Sha256 support
+/*async function sha256Hex(str) {
+  const enc = new TextEncoder();
+  const data = enc.encode(str);
+  const hashBuf = await crypto.subtle.digest("SHA-256", data);
+  const hashArr = Array.from(new Uint8Array(hashBuf));
+  return hashArr.map((b) => b.toString(16).padStart(2, "0")).join("");
+}*/
+
+// ============================================================
+// ===== PixelBoss (UPDATED for seed + load support) ✅
+// ============================================================
+class PixelBoss {
+  constructor(type = null, opts = {}) {
+    
+    // opts: { seed, forcedPaletteIndex, forcedRarityKey, forcedName, forcedStats }
+    this.seed = opts.seed || makeSeed();
+    // Use two deterministic RNG streams so cosmetics never change body shape
+this.rngBody = makeRng(this.seed + "|body");
+this.rngCos  = makeRng(this.seed + "|cos");
+
+// For existing calls, keep this.rng pointing to body RNG
+this.rng = this.rngBody;
+    
+
+    this.type = type || randomFrom(CHAR_BOSS_TYPES, this.rng);
+
+    const palettes = CHAR_BOSS_PALETTES[this.type];
+
+    // only use a forced paletteIndex if it's a valid array index
+    const forcedPI =
+      Number.isInteger(opts.forcedPaletteIndex) && opts.forcedPaletteIndex >= 0
+        ? opts.forcedPaletteIndex
+        : null;
+
+    this.paletteIndex =
+      forcedPI !== null ? forcedPI : Math.floor(this.rng() * palettes.length);
+    this.palette = palettes[this.paletteIndex];
+    // inside PixelBoss constructor after rng/type/palette chosen
+    this.variant = opts.forcedVariant || this.pickVariant?.() || "base";
+    // If you don’t have pickVariant yet, keep "base" for now.
+
+    // ---- Variant / Neon (DETERMINISTIC) ----
+    //
+    // Rule:
+    // - If forcedVariant is provided, we MUST use it and never roll neon.
+    // - Else, we roll neon ONCE, deterministically from seed.
+    // - If no neon, variant is "base".
+
+    let forcedNeon = null;
+    if (opts.forcedVariant) {
+      forcedNeon =
+        SPECIAL_NEON_PALETTES.find((x) => x.key === opts.forcedVariant) || null;
+    }
+
+    if (forcedNeon) {
+      this.variant = forcedNeon.key;
+      this.palette = forcedNeon.p;
+      this.paletteIndex = -1; // special override
+    } else {
+      const neon = maybePickSpecialNeon(this.rngCos); // roll ONCE
+      if (neon) {
+        this.variant = neon.key;
+        this.palette = neon.p;
+        this.paletteIndex = -1;
+      } else {
+        this.variant = "base";
+        // keep the normal palette already selected above
+      }
+    }
+
+    [
+      this.TRANSPARENT,
+      this.BODY,
+      this.ACCENT,
+      this.GLOW,
+      this.DETAIL
+    ] = this.palette;
+
+    this.OUTLINE = this.DETAIL;
+    this.pixels = Array.from({ length: CHAR_BOSS_H }, () =>
+      Array(CHAR_BOSS_W).fill(null)
+    );
+
+    // Name (seeded if generated, but we also restore on load)
+    this.name = opts.forcedName || generateBossName(this.type, this.rng);
+
+    // Rarity (seeded if generated, but we also restore on load)
+    this.rarity = opts.forcedRarityKey
+      ? RARITIES.find((r) => r.key === opts.forcedRarityKey) ||
+        pickRarity(this.rng)
+      : pickRarity(this.rng);
+
+    // Stats (seeded if generated, but we also restore on load)
+    this.stats =
+      opts.forcedStats ||
+      generateBossStats({
+        type: this.type,
+        palette: this.palette,
+        rarity: this.rarity,
+        rng: this.rng
+      });
+    
+    this.backstory = opts.forcedBackstory || generateBackstory(this);
+
+    if (opts.forcedPixels) {
+  this.pixels = opts.forcedPixels;
+} else {
+  this.generate();
+}
+  }
+
+  randomFrom(arr) {
+    return randomFrom(arr, this.rng);
+  }
+  chance(p) {
+    return chance(p, this.rng);
+  }
+
+  setPixel(x, y, color) {
+    if (x < 0 || y < 0 || x >= CHAR_BOSS_W || y >= CHAR_BOSS_H) return;
+    this.pixels[y][x] = color;
+    this.pixels[y][CHAR_BOSS_W - 1 - x] = color;
+  }
+
+  setPixelRaw(x, y, color) {
+    if (x < 0 || y < 0 || x >= CHAR_BOSS_W || y >= CHAR_BOSS_H) return;
+    this.pixels[y][x] = color;
+  }
+
+  spike(x, y, height, color) {
+    for (let i = 0; i < height; i++) {
+      this.setPixel(x, y - i, color);
+      if (this.chance(0.35)) this.setPixel(x + 1, y - i, color);
+    }
+  }
+
+  // ===== YOUR EXISTING GENERATE/APPLY FEATURES (unchanged except now uses this.randomFrom/this.chance) =====
+  generate() {
+    const cx = Math.floor(CHAR_BOSS_W / 2);
+
+    const headH = this.randomFrom([4, 5, 5, 6]);
+    const torsoH = this.randomFrom([6, 7, 8]);
+    const torsoStart = headH;
+    const legStart = torsoStart + torsoH;
+
+    const headW = this.randomFrom([3, 4, 4]);
+    const bodyW = this.randomFrom([4, 5, 5, 6]);
+    const shoulderY = torsoStart + 1;
+
+    const eyeStyle = this.randomFrom(["glow", "dot", "visor", "angry"]);
+    const hasCape = this.chance(0.35);
+    const hasCrown = this.chance(0.25);
+    const hasBattleDamage = this.chance(0.12);
+
+    // HEAD
+    for (let y = 0; y < headH; y++) {
+      for (let x = cx - headW; x <= cx; x++) {
+        const c = this.chance(0.12) ? this.ACCENT : this.BODY;
+        this.setPixel(x, y, c);
+      }
+    }
+    if (this.chance(0.5)) this.setPixel(cx - headW, 0, null);
+
+    // EYES
+    const eyeY = this.randomFrom([2, 3, 3, 4].filter((v) => v < headH));
+    const eyeX = this.randomFrom([cx - 2, cx - 3]);
+
+    if (eyeStyle === "glow") {
+      this.setPixel(eyeX, eyeY, this.GLOW);
+      if (this.chance(0.4)) this.setPixel(eyeX + 1, eyeY, this.GLOW);
+    } else if (eyeStyle === "dot") {
+      this.setPixel(eyeX, eyeY, this.DETAIL);
+    } else if (eyeStyle === "visor") {
+      for (let x = cx - headW; x <= cx; x++) this.setPixel(x, eyeY, this.GLOW);
+    } else if (eyeStyle === "angry") {
+      this.setPixel(eyeX, eyeY, this.GLOW);
+      if (eyeY > 0) this.setPixel(eyeX + 1, eyeY - 1, this.DETAIL);
+    }
+
+    // MOUTH/FANG
+    if (this.chance(0.5)) {
+      const my = headH - 1;
+      this.setPixel(cx - 1, my, this.ACCENT);
+      if (this.chance(0.35)) this.setPixel(cx - 2, my, this.DETAIL);
+    }
+
+    // TORSO
+    for (let y = torsoStart; y < torsoStart + torsoH; y++) {
+      for (let x = cx - bodyW; x <= cx; x++) {
+        let c = this.BODY;
+        if (this.chance(0.18)) c = this.ACCENT;
+        if (this.chance(0.06)) c = this.DETAIL;
+        this.setPixel(x, y, c);
+      }
+    }
+
+    // shoulder armor
+    if (this.chance(0.75)) {
+      this.setPixel(cx - bodyW - 1, shoulderY, this.DETAIL);
+      this.setPixel(cx - bodyW - 1, shoulderY + 1, this.DETAIL);
+      if (this.chance(0.45))
+        this.setPixel(cx - bodyW - 2, shoulderY, this.ACCENT);
+    }
+
+    // chest sigil
+    if (this.chance(0.6)) {
+      this.setPixel(cx - 1, torsoStart + 2, this.GLOW);
+      if (this.chance(0.4)) this.setPixel(cx - 2, torsoStart + 3, this.DETAIL);
+    }
+
+    // arms
+    const armPose = this.randomFrom(["down", "bent", "claw"]);
+    if (armPose === "down") {
+      this.setPixel(cx - bodyW - 1, shoulderY, this.ACCENT);
+      this.setPixel(cx - bodyW - 1, shoulderY + 1, this.ACCENT);
+      this.setPixel(cx - bodyW - 1, shoulderY + 2, this.ACCENT);
+    } else if (armPose === "bent") {
+      this.setPixel(cx - bodyW - 1, shoulderY, this.ACCENT);
+      this.setPixel(cx - bodyW, shoulderY + 1, this.ACCENT);
+      if (this.chance(0.6))
+        this.setPixel(cx - bodyW - 2, shoulderY + 2, this.DETAIL);
+    } else {
+      this.setPixel(cx - bodyW - 1, shoulderY, this.ACCENT);
+      this.setPixel(cx - bodyW - 2, shoulderY + 1, this.ACCENT);
+      this.setPixel(cx - bodyW - 3, shoulderY + 2, this.ACCENT);
+      this.setPixel(cx - bodyW - 3, shoulderY + 3, this.DETAIL);
+    }
+
+    // legs
+    const legStyle = this.randomFrom(["boots", "robe", "hooves", "talons"]);
+    if (legStyle === "boots") {
+      for (let y = legStart; y < CHAR_BOSS_H; y++)
+        this.setPixel(cx - 2, y, this.BODY);
+      this.setPixel(cx - 2, CHAR_BOSS_H - 1, this.ACCENT);
+      if (this.chance(0.5)) this.setPixel(cx - 1, CHAR_BOSS_H - 1, this.ACCENT);
+    } else if (legStyle === "robe") {
+      for (let y = legStart; y < CHAR_BOSS_H; y++) {
+        for (let x = cx - bodyW; x <= cx; x++) this.setPixel(x, y, this.ACCENT);
+      }
+      if (this.chance(0.6)) this.setPixel(cx - 2, CHAR_BOSS_H - 1, this.BODY);
+    } else if (legStyle === "hooves") {
+      for (let y = legStart; y < CHAR_BOSS_H - 1; y++)
+        this.setPixel(cx - 2, y, this.BODY);
+      this.setPixel(cx - 2, CHAR_BOSS_H - 1, this.DETAIL);
+    } else {
+      for (let y = legStart; y < CHAR_BOSS_H - 1; y++)
+        this.setPixel(cx - 2, y, this.BODY);
+      this.setPixel(cx - 2, CHAR_BOSS_H - 1, this.ACCENT);
+      this.setPixel(cx - 1, CHAR_BOSS_H - 1, this.DETAIL);
+    }
+
+    // cape
+    if (hasCape) {
+      const cy = torsoStart + 2;
+      this.setPixel(2, cy, this.ACCENT);
+      this.setPixel(2, cy + 1, this.ACCENT);
+      if (this.chance(0.6)) this.setPixel(2, cy + 2, this.DETAIL);
+    }
+
+    // crown
+    if (hasCrown) {
+      this.setPixel(cx - 2, 0, this.GLOW);
+      this.setPixel(cx - 3, 1, this.DETAIL);
+      if (this.chance(0.5)) this.setPixel(cx - 1, 0, this.GLOW);
+    }
+
+    this.applyTypeFeatures({ cx, headH, headW, bodyW, torsoStart, legStart });
+
+    // damage
+    if (hasBattleDamage) {
+      const ax = cx + this.randomFrom([4, 5, 6]);
+      const ay = this.randomFrom([6, 7, 8, 9, 10, 11, 12]);
+      this.setPixelRaw(ax, ay, null);
+      if (this.chance(0.7)) this.setPixelRaw(ax + 1, ay, this.GLOW);
+    }
+
+    this.outline();
+  }
+
+  applyTypeFeatures(s) {
+    const { cx, headH, headW, bodyW, torsoStart, legStart } = s;
+    
+    // ===== Variant extras (seeded) =====
+    // Neon Glitch: add scanlines
+    if (this.variant === "neon_glitch" && this.chance(0.85)) {
+      for (let y = 1; y < CHAR_BOSS_H; y += 3) {
+        for (let x = 2; x < CHAR_BOSS_W - 2; x += 2) {
+          if (this.chance(0.35)) this.setPixelRaw(x, y, this.GLOW);
+        }
+      }
+    }
+
+    // Neon Aura: tiny glow dots around the silhouette
+    if (this.variant && this.chance(0.65)) {
+      for (let i = 0; i < 18; i++) {
+        const x = this.randomFrom([1, 2, 3, 4, 11, 12, 13, 14]);
+        const y = this.randomFrom([1, 2, 3, 4, 5, 6, 12, 13, 14, 15, 16, 17]);
+        if (this.chance(0.35)) this.setPixelRaw(x, y, this.GLOW);
+      }
+    }
+    if (this.type === "cyber_samurai") {
+      // visor
+      const eyeY = 3;
+      for (let x = cx - headW; x <= cx; x++) this.setPixel(x, eyeY, this.GLOW);
+
+      // shoulder plates
+      this.setPixel(cx - bodyW - 1, torsoStart + 1, this.DETAIL);
+      this.setPixel(cx - bodyW - 2, torsoStart + 1, this.ACCENT);
+
+      // blade
+      if (this.chance(0.9)) {
+        const bx = cx + 5;
+        const by = torsoStart + 4;
+        for (let i = 0; i < 7; i++) this.setPixelRaw(bx + i, by - i, this.GLOW);
+        this.setPixelRaw(bx + 2, by - 2, this.ACCENT);
+      }
+    }
+
+    if (this.type === "void_assassin") {
+      // hood shadow
+      for (let x = cx - headW; x <= cx; x++) {
+        if (this.chance(0.55)) this.setPixel(x, 0, this.DETAIL);
+      }
+      // twin daggers
+      if (this.chance(0.85)) {
+        const y = torsoStart + 5;
+        this.setPixelRaw(cx + 5, y, this.GLOW);
+        this.setPixelRaw(cx + 6, y + 1, this.ACCENT);
+        this.setPixelRaw(cx - 7, y, this.GLOW);
+        this.setPixelRaw(cx - 8, y + 1, this.ACCENT);
+      }
+      // shadow trail
+      if (this.chance(0.6)) {
+        for (let y = torsoStart + 6; y < CHAR_BOSS_H; y++) {
+          if (this.chance(0.35)) this.setPixelRaw(1, y, this.DETAIL);
+        }
+      }
+    }
+
+    if (this.type === "neon_witch") {
+      // hat
+      this.setPixel(cx - 2, 0, this.DETAIL);
+      this.setPixel(cx - 3, 1, this.DETAIL);
+      this.setPixel(cx - 1, 0, this.DETAIL);
+
+      // staff + rune
+      const sx = cx - bodyW - 4;
+      const sy = torsoStart + 1;
+      for (let y = sy; y <= sy + 9; y++) this.setPixel(sx, y, this.DETAIL);
+      this.setPixel(sx, sy - 1, this.GLOW);
+      if (this.chance(0.7)) this.setPixel(sx - 1, sy + 2, this.ACCENT);
+
+      // floating orb
+      if (this.chance(0.75)) {
+        this.setPixelRaw(cx + 6, torsoStart + 2, this.GLOW);
+        this.setPixelRaw(cx + 7, torsoStart + 2, this.ACCENT);
+      }
+    }
+
+    if (this.type === "storm_titan") {
+      // massive pauldrons
+      this.setPixel(cx - bodyW - 2, torsoStart + 1, this.DETAIL);
+      this.setPixel(cx - bodyW - 3, torsoStart + 1, this.DETAIL);
+      this.setPixel(cx - bodyW - 2, torsoStart + 2, this.ACCENT);
+
+      // lightning core
+      this.setPixel(cx - 1, torsoStart + 3, this.GLOW);
+      this.setPixel(cx - 2, torsoStart + 3, this.GLOW);
+      if (this.chance(0.6)) this.setPixel(cx - 1, torsoStart + 4, this.ACCENT);
+
+      // lightning sparks
+      for (let i = 0; i < 5; i++) {
+        const x = cx + this.randomFrom([3, 4, 5, 6]);
+        const y = torsoStart + this.randomFrom([1, 2, 3, 4, 5]);
+        if (this.chance(0.55)) this.setPixelRaw(x, y, this.GLOW);
+      }
+    }
+
+    if (this.type === "crystal_seraph") {
+      // halo
+      if (this.chance(0.85)) {
+        this.setPixel(cx - 2, 0, this.GLOW);
+        this.setPixel(cx - 1, 0, this.GLOW);
+        this.setPixel(cx - 3, 1, this.ACCENT);
+      }
+
+      // wings
+      const wy = torsoStart + 2;
+      this.setPixel(cx - bodyW - 2, wy, this.GLOW);
+      this.setPixel(cx - bodyW - 3, wy + 1, this.GLOW);
+      this.setPixel(cx - bodyW - 4, wy + 2, this.GLOW);
+      this.setPixel(cx - bodyW - 5, wy + 3, this.ACCENT);
+    }
+
+    if (this.type === "toxic_alchemist") {
+      // mask
+      this.setPixel(cx - 2, 2, this.DETAIL);
+      this.setPixel(cx - 3, 2, this.DETAIL);
+
+      // vials belt
+      const by = torsoStart + 5;
+      for (let i = 0; i < 3; i++) {
+        const x = cx - 1 - i;
+        this.setPixel(x, by, this.GLOW);
+        if (this.chance(0.6)) this.setPixel(x, by + 1, this.ACCENT);
+      }
+
+      // bubbling splash
+      if (this.chance(0.7)) {
+        this.setPixelRaw(cx + 6, legStart + 2, this.GLOW);
+        this.setPixelRaw(cx + 7, legStart + 3, this.ACCENT);
+        if (this.chance(0.5)) this.setPixelRaw(cx + 8, legStart + 4, this.GLOW);
+      }
+    }
+
+    if (this.type === "orc_warlord") {
+      this.setPixel(cx - 2, headH - 1, this.DETAIL);
+      this.setPixel(cx - 3, headH - 1, this.DETAIL);
+      this.setPixel(cx - 3, 1, this.DETAIL);
+
+      if (this.chance(0.75)) {
+        const wx = cx - bodyW - 3;
+        const wy = torsoStart + 2;
+        for (let y = wy; y <= wy + 6; y++) this.setPixel(wx, y, this.DETAIL);
+        this.setPixel(wx - 1, wy + 1, this.ACCENT);
+        this.setPixel(wx - 2, wy + 2, this.ACCENT);
+      }
+    }
+
+    if (this.type === "dragonkin") {
+      this.spike(cx - headW, 1, this.randomFrom([2, 3]), this.DETAIL);
+
+      for (let i = 0; i < 5; i++) {
+        const y = torsoStart + this.randomFrom([1, 2, 3, 4, 5]);
+        this.setPixel(cx - this.randomFrom([1, 2, 3, 4]), y, this.ACCENT);
+      }
+
+      if (this.chance(0.8)) {
+        const tx = cx + this.randomFrom([4, 5, 6]);
+        const ty = legStart + this.randomFrom([1, 2, 3]);
+        this.setPixelRaw(tx, ty, this.ACCENT);
+        this.setPixelRaw(tx + 1, ty + 1, this.ACCENT);
+        this.setPixelRaw(tx + 2, ty + 2, this.DETAIL);
+      }
+
+      if (this.chance(0.6)) {
+        const wy = torsoStart + 2;
+        this.setPixel(cx - bodyW - 2, wy, this.DETAIL);
+        this.setPixel(cx - bodyW - 3, wy + 1, this.DETAIL);
+        this.setPixel(cx - bodyW - 4, wy + 2, this.DETAIL);
+      }
+    }
+
+    if (this.type === "fallen_angel") {
+      if (this.chance(0.7)) {
+        this.setPixel(cx - 1, 0, this.GLOW);
+        this.setPixel(cx - 2, 0, this.GLOW);
+        this.setPixel(cx - 3, 0, this.GLOW);
+      }
+
+      const wy = torsoStart + 2;
+      this.setPixel(cx - bodyW - 2, wy, this.DETAIL);
+      this.setPixel(cx - bodyW - 3, wy + 1, this.DETAIL);
+      this.setPixel(cx - bodyW - 4, wy + 2, this.DETAIL);
+      this.setPixel(cx - bodyW - 5, wy + 3, this.DETAIL);
+
+      this.setPixel(cx - 1, torsoStart + 3, this.GLOW);
+      if (this.chance(0.6)) this.setPixel(cx - 2, torsoStart + 3, this.GLOW);
+    }
+
+    if (this.type === "forest_fairy") {
+      if (this.chance(0.65)) {
+        this.setPixel(cx - 2, 0, this.DETAIL);
+        this.setPixel(cx - 2, 1, this.DETAIL);
+      }
+
+      const wy = torsoStart + 2;
+      this.setPixel(cx - bodyW - 2, wy, this.GLOW);
+      this.setPixel(cx - bodyW - 3, wy + 1, this.GLOW);
+      this.setPixel(cx - bodyW - 4, wy + 2, this.GLOW);
+      if (this.chance(0.6)) this.setPixel(cx - bodyW - 5, wy + 3, this.GLOW);
+
+      if (this.chance(0.75)) {
+        const wx = cx - bodyW - 3;
+        const wy2 = torsoStart + 3;
+        for (let y = wy2; y <= wy2 + 5; y++) this.setPixel(wx, y, this.DETAIL);
+        this.setPixel(wx, wy2 - 1, this.GLOW);
+        this.setPixel(wx - 1, wy2, this.GLOW);
+      }
+    }
+
+    if (this.type === "high_elf_champion") {
+      this.setPixel(cx - headW - 1, 2, this.ACCENT);
+      this.setPixel(cx - headW - 2, 3, this.ACCENT);
+
+      this.setPixel(cx - bodyW - 1, torsoStart + 1, this.GLOW);
+
+      if (this.chance(0.8)) {
+        const sx = cx - bodyW - 3;
+        const sy = torsoStart + 1;
+        for (let y = sy; y <= sy + 7; y++) this.setPixel(sx, y, this.DETAIL);
+        this.setPixel(sx, sy - 1, this.GLOW);
+      }
+    }
+
+    if (this.type === "demon_knight") {
+      this.spike(cx - headW, 1, this.randomFrom([3, 4]), this.DETAIL);
+
+      for (let i = 0; i < 4; i++) {
+        this.setPixel(
+          cx - this.randomFrom([1, 2, 3, 4]),
+          torsoStart + this.randomFrom([2, 3, 4, 5]),
+          this.GLOW
+        );
+      }
+
+      this.setPixel(cx - bodyW - 2, torsoStart + 1, this.DETAIL);
+      this.setPixel(cx - bodyW - 3, torsoStart + 2, this.DETAIL);
+
+      if (this.chance(0.75)) {
+        const bx = cx - bodyW - 4;
+        const by = torsoStart + 2;
+        for (let y = by; y <= by + 7; y++) this.setPixel(bx, y, this.DETAIL);
+        this.setPixel(bx - 1, by + 2, this.GLOW);
+        this.setPixel(bx - 1, by + 3, this.GLOW);
+      }
+    }
+
+    if (this.type === "skeleton_lich") {
+      this.setPixel(cx - 2, 2, this.DETAIL);
+      this.setPixel(cx - 3, 2, this.DETAIL);
+
+      for (let i = 0; i < 4; i++)
+        this.setPixel(cx - 3, torsoStart + 2 + i, this.DETAIL);
+
+      if (this.chance(0.85)) {
+        const sx = cx - bodyW - 3;
+        const sy = torsoStart + 1;
+        for (let y = sy; y <= sy + 8; y++) this.setPixel(sx, y, this.DETAIL);
+        this.setPixel(sx, sy - 1, this.GLOW);
+        this.setPixel(sx - 1, sy - 2, this.GLOW);
+      }
+
+      for (let y = torsoStart + 2; y < CHAR_BOSS_H; y++) {
+        if (this.chance(0.25)) this.setPixel(2, y, this.ACCENT);
+      }
+    }
+
+    if (this.type === "stone_golem") {
+      this.setPixel(cx - 2, headH - 1, this.DETAIL);
+
+      for (let i = 0; i < 5; i++) {
+        const x = cx - this.randomFrom([1, 2, 3, 4, 5]);
+        const y = torsoStart + this.randomFrom([1, 2, 3, 4, 5, 6]);
+        this.setPixel(x, y, this.DETAIL);
+      }
+
+      this.setPixel(cx - 1, torsoStart + 3, this.GLOW);
+      this.setPixel(cx - 2, torsoStart + 3, this.GLOW);
+    }
+  }
+
+  outline() {
+    for (let y = 0; y < CHAR_BOSS_H; y++) {
+      for (let x = 0; x < CHAR_BOSS_W; x++) {
+        if (!this.pixels[y][x]) {
+          const neighbors = [
+            this.pixels[y]?.[x - 1],
+            this.pixels[y]?.[x + 1],
+            this.pixels[y - 1]?.[x],
+            this.pixels[y + 1]?.[x]
+          ];
+          if (neighbors.some(Boolean)) this.pixels[y][x] = this.OUTLINE;
+        }
+      }
+    }
+  }
+
+  drawSprite(ctx, xOffset, yOffset) {
+    for (let y = 0; y < CHAR_BOSS_H; y++) {
+      for (let x = 0; x < CHAR_BOSS_W; x++) {
+        const c = this.pixels[y][x];
+        if (!c) continue;
+        ctx.fillStyle = c;
+        ctx.fillRect(xOffset + x * SCALE, yOffset + y * SCALE, SCALE, SCALE);
+      }
+    }
+  }
+}
+
+// ============================================================
+// ===== Rarity glossy neon frame (unchanged)
+// ============================================================
+function drawRarityFrame(ctx, cardX, cardY, cardPxW, cardPxH, rarityColors) {
+  ctx.fillStyle = rarityColors.outer;
+  ctx.fillRect(cardX, cardY, cardPxW, CARD_BORDER * SCALE);
+  ctx.fillRect(
+    cardX,
+    cardY + cardPxH - CARD_BORDER * SCALE,
+    cardPxW,
+    CARD_BORDER * SCALE
+  );
+  ctx.fillRect(cardX, cardY, CARD_BORDER * SCALE, cardPxH);
+  ctx.fillRect(
+    cardX + cardPxW - CARD_BORDER * SCALE,
+    cardY,
+    CARD_BORDER * SCALE,
+    cardPxH
+  );
+
+  ctx.fillStyle = rarityColors.mid;
+  ctx.fillRect(cardX + SCALE, cardY + SCALE, cardPxW - 2 * SCALE, SCALE);
+  ctx.fillRect(cardX + SCALE, cardY + SCALE, SCALE, cardPxH - 2 * SCALE);
+  ctx.fillRect(
+    cardX + SCALE,
+    cardY + cardPxH - 2 * SCALE,
+    cardPxW - 2 * SCALE,
+    SCALE
+  );
+  ctx.fillRect(
+    cardX + cardPxW - 2 * SCALE,
+    cardY + SCALE,
+    SCALE,
+    cardPxH - 2 * SCALE
+  );
+
+  ctx.fillStyle = rarityColors.inner;
+  ctx.fillRect(
+    cardX + 2 * SCALE,
+    cardY + 2 * SCALE,
+    cardPxW - 4 * SCALE,
+    SCALE
+  );
+  ctx.fillRect(
+    cardX + 2 * SCALE,
+    cardY + 2 * SCALE,
+    SCALE,
+    cardPxH - 4 * SCALE
+  );
+
+  ctx.fillStyle = rarityColors.glow;
+  const tick = SCALE;
+  ctx.fillRect(cardX + 2 * SCALE, cardY + 2 * SCALE, tick, tick);
+  ctx.fillRect(cardX + cardPxW - 3 * SCALE, cardY + 2 * SCALE, tick, tick);
+  ctx.fillRect(cardX + 2 * SCALE, cardY + cardPxH - 3 * SCALE, tick, tick);
+  ctx.fillRect(
+    cardX + cardPxW - 3 * SCALE,
+    cardY + cardPxH - 3 * SCALE,
+    tick,
+    tick
+  );
+
+  ctx.globalAlpha = 0.18;
+  ctx.fillStyle = rarityColors.gloss;
+  ctx.fillRect(
+    cardX + 2 * SCALE,
+    cardY + 3 * SCALE,
+    cardPxW - 4 * SCALE,
+    Math.max(1, Math.floor(SCALE * 0.7))
+  );
+  ctx.globalAlpha = 1;
+}
+
+function splitFooterTwoLines(text) {
+  // Prefer splitting at bullets first, then spaces
+  const candidates = [];
+
+  // split at " • "
+  const bullet = text.indexOf(" • ");
+  if (bullet > 0) candidates.push(bullet + 2); // after bullet
+
+  // also allow other bullets
+  for (let i = 0; i < text.length; i++) {
+    if (text[i] === "•") candidates.push(i + 1);
+    if (text[i] === " ") candidates.push(i);
+  }
+
+  if (candidates.length === 0) {
+    const mid = Math.floor(text.length / 2);
+    return [text.slice(0, mid).trim(), text.slice(mid).trim()];
+  }
+
+  const mid = text.length / 2;
+  let best = candidates[0];
+  let bestDist = Math.abs(best - mid);
+
+  for (const c of candidates) {
+    const d = Math.abs(c - mid);
+    if (d < bestDist) {
+      best = c;
+      bestDist = d;
+    }
+  }
+
+  return [text.slice(0, best).trim(), text.slice(best).trim()];
+}
+
+function drawWrappedFooter(
+  ctx,
+  text,
+  xCenter,
+  yTop,
+  innerW,
+  boxH,
+  baseFontPx,
+  minFontPx,
+  glowColor
+) {
+  let fontPx = baseFontPx;
+
+  while (fontPx >= minFontPx) {
+    ctx.font = `${fontPx}px monospace`;
+    ctx.textBaseline = "middle";
+
+    // 1-line fits?
+    if (ctx.measureText(text).width <= innerW) {
+      const y = Math.round(yTop + boxH / 2);
+
+      // glow
+      ctx.fillStyle = glowColor;
+      ctx.globalAlpha = 0.35;
+      ctx.fillText(
+        text,
+        Math.round(xCenter - ctx.measureText(text).width / 2) + 1,
+        y + 1
+      );
+      ctx.globalAlpha = 1;
+
+      // shadow + main
+      centerText(ctx, text, xCenter, y);
+      return;
+    }
+
+    // 2-line fit?
+    const [l1, l2] = splitFooterTwoLines(text);
+    const w1 = ctx.measureText(l1).width;
+    const w2 = ctx.measureText(l2).width;
+
+    const gap = Math.max(1, Math.floor(fontPx * 0.2));
+    const totalH = fontPx * 2 + gap;
+
+    if (w1 <= innerW && w2 <= innerW && totalH <= boxH) {
+      const midY = yTop + boxH / 2;
+      const y1 = Math.round(midY - fontPx / 2 - gap / 2);
+      const y2 = Math.round(midY + fontPx / 2 + gap / 2);
+
+      // glow pass
+      ctx.fillStyle = glowColor;
+      ctx.globalAlpha = 0.35;
+
+      ctx.fillText(l1, Math.round(xCenter - w1 / 2) + 1, y1 + 1);
+      ctx.fillText(l2, Math.round(xCenter - w2 / 2) + 1, y2 + 1);
+
+      ctx.globalAlpha = 1;
+
+      // shadow + main
+      centerText(ctx, l1, xCenter, y1);
+      centerText(ctx, l2, xCenter, y2);
+      return;
+    }
+
+    fontPx--;
+  }
+
+  // Worst case: force 2 lines at min size
+  ctx.font = `${minFontPx}px monospace`;
+  ctx.textBaseline = "middle";
+
+  const [l1, l2] = splitFooterTwoLines(text);
+  const w1 = ctx.measureText(l1).width;
+  const w2 = ctx.measureText(l2).width;
+
+  const gap = Math.max(1, Math.floor(minFontPx * 0.2));
+  const midY = yTop + boxH / 2;
+  const y1 = Math.round(midY - minFontPx / 2 - gap / 2);
+  const y2 = Math.round(midY + minFontPx / 2 + gap / 2);
+
+  ctx.fillStyle = glowColor;
+  ctx.globalAlpha = 0.35;
+  ctx.fillText(l1, Math.round(xCenter - w1 / 2) + 1, y1 + 1);
+  ctx.fillText(l2, Math.round(xCenter - w2 / 2) + 1, y2 + 1);
+  ctx.globalAlpha = 1;
+
+  centerText(ctx, l1, xCenter, y1);
+  centerText(ctx, l2, xCenter, y2);
+}
+
+// ============================================================
+// ===== Card drawing (unchanged)
+// ============================================================
+function drawBossCard(ctx, boss, cardX, cardY) {
+  const cardPxW = CARD_W * SCALE;
+  const cardPxH = CARD_H * SCALE;
+
+  const theme = getCardTheme(boss);
+
+  ctx.fillStyle = CARD_COLORS.bg;
+  ctx.fillRect(cardX, cardY, cardPxW, cardPxH);
+
+  drawRarityFrame(ctx, cardX, cardY, cardPxW, cardPxH, boss.rarity.colors);
+
+  const titleX = cardX + (CARD_BORDER + CARD_PAD) * SCALE;
+  const titleY = cardY + (CARD_BORDER + CARD_PAD) * SCALE;
+  const titleW = (CARD_W - 2 * (CARD_BORDER + CARD_PAD)) * SCALE;
+  const titleH = CARD_TITLE_H * SCALE;
+
+  ctx.fillStyle = CARD_COLORS.titleBg;
+  ctx.fillRect(titleX, titleY, titleW, titleH);
+
+  // divider under title
+  ctx.fillStyle = theme.divider;
+  ctx.fillRect(titleX, titleY + titleH, titleW, SCALE);
+
+  const artX = titleX;
+  const artY = titleY + titleH + SCALE;
+  const artW = titleW;
+  const artH = (CHAR_BOSS_H + CARD_ART_PAD * 2) * SCALE;
+
+  // dynamic art bg
+  ctx.fillStyle = theme.artBg;
+  ctx.fillRect(artX, artY, artW, artH);
+
+  // inner mat/trim
+  drawArtTrim(ctx, artX, artY, artW, artH, theme.artTrim);
+
+  const footY = artY + artH + SCALE;
+  const footH = CARD_FOOT_H * SCALE;
+
+  // divider above footer
+  ctx.fillStyle = theme.divider;
+  ctx.fillRect(titleX, footY - SCALE, titleW, SCALE);
+
+  ctx.fillStyle = CARD_COLORS.footerBg;
+  ctx.fillRect(titleX, footY, titleW, footH);
+
+  // sprite placement (unchanged)
+  const bounds = getPixelBounds(boss.pixels);
+
+  const artWPx = CARD_W - 2 * (CARD_BORDER + CARD_PAD);
+  const artHPx = CHAR_BOSS_H + CARD_ART_PAD * 2;
+
+  const artLocalX = CARD_BORDER + CARD_PAD;
+  const artLocalY = CARD_BORDER + CARD_PAD + CARD_TITLE_H + 1;
+
+  const innerWPx = artWPx - CARD_ART_PAD * 2;
+  const innerHPx = artHPx - CARD_ART_PAD * 2;
+
+  const offsetXPx =
+    artLocalX + CARD_ART_PAD + Math.floor((innerWPx - bounds.w) / 2) - bounds.minX;
+  const offsetYPx =
+    artLocalY + CARD_ART_PAD + Math.floor((innerHPx - bounds.h) / 2) - bounds.minY;
+
+  const spriteX = cardX + offsetXPx * SCALE;
+  const spriteY = cardY + offsetYPx * SCALE;
+
+  // HALO pass first
+  drawSpriteHalo(ctx, boss.pixels, spriteX, spriteY, theme.halo);
+
+  boss.drawSprite(ctx, spriteX, spriteY);
+
+  // title + footer text (unchanged)
+  ctx.imageSmoothingEnabled = false;
+  const xCenter = titleX + titleW / 2;
+
+  const innerTextW = titleW - 2 * SCALE;
+  const baseFont = Math.max(11, Math.floor(SCALE * 1.15));
+  const minFont = Math.max(10, Math.floor(SCALE * 1.0));
+
+  drawWrappedTitle(ctx, boss.name, xCenter, titleY, innerTextW, titleH, baseFont, minFont);
+
+  const variantTxt = boss.variant ? ` • ${formatVariantLabel(boss.variant)}` : "";
+  const footerLabel = `${boss.rarity.name} • ${boss.stats.element.name}${variantTxt} • LV ${boss.stats.level}`;
+
+  const footInnerW = titleW - 4 * SCALE;
+  const footBaseFont = Math.max(8, Math.floor(SCALE * 1.0));
+  const footMinFont = Math.max(7, Math.floor(SCALE * 0.9));
+
+  drawWrappedFooter(
+    ctx,
+    footerLabel,
+    titleX + titleW / 2,
+    footY,
+    footInnerW,
+    footH,
+    footBaseFont,
+    footMinFont,
+    boss.rarity.colors.glow
+  );
+}
+
+
+// ===== Render helpers =====
+function gridSpacingFallback() {
+  return typeof CHAR_SPACING !== "undefined" ? CHAR_SPACING : 4;
+}
+
+window.__lastBoss = null;
+
+function generateCharacterBossCard() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  const boss = new PixelBoss();
+  window.__lastBoss = boss;
+
+  const cardPxW = CARD_W * SCALE;
+  const cardPxH = CARD_H * SCALE;
+
+  const ox = Math.max(0, Math.floor((canvas.width - cardPxW) / 2));
+  const oy = Math.max(0, Math.floor((canvas.height - cardPxH) / 2));
+
+  drawBossCard(ctx, boss, ox, oy);
+}
+function formatVariantLabel(variant) {
+  if (!variant) return "";
+  // "neon_ultraviolet" -> "ULTRAVIOLET"
+  return variant
+    .replace(/^neon_/, "")
+    .replace(/_/g, " ")
+    .toUpperCase();
+}
+
+function generateCharacterBossCardGrid() {
+  const count = parseInt(
+    document.getElementById("charCount")?.value || "12",
+    10
+  );
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  const spacing = gridSpacingFallback();
+  const cardPixelWidth = (CARD_W + spacing) * SCALE;
+  const cardPixelHeight = (CARD_H + spacing) * SCALE;
+
+  const cols = Math.max(1, Math.floor(canvas.width / cardPixelWidth));
+
+  for (let i = 0; i < count; i++) {
+    const col = i % cols;
+    const row = Math.floor(i / cols);
+
+    const x = col * cardPixelWidth;
+    const y = row * cardPixelHeight;
+
+    const boss = new PixelBoss();
+    window.__lastBoss = boss;
+    drawBossCard(ctx, boss, x, y);
+  }
+}
+
+window.generateCharacterBossCard = generateCharacterBossCard;
+window.generateCharacterBossCardGrid = generateCharacterBossCardGrid;
+
+// ============================================================
+// PvP DUEL SYSTEM (CANCEL WILD element advantage)
+// ============================================================
+const RARITY_POWER = {
+  common: 1,
+  uncommon: 2,
+  rare: 3,
+  epic: 4,
+  legendary: 5,
+  mythic: 6
+};
+
+const ELEMENT_ADVANTAGE = {
+  nature: ["void", "frost"],
+  void: ["arcane", "radiant"],
+  arcane: ["inferno", "frost"],
+  inferno: ["nature", "blood"],
+  frost: ["inferno", "blood"],
+  radiant: ["void", "blood"],
+  blood: ["nature", "arcane"]
+};
+
+function elementOutcome(aEl, bEl) {
+  if (!aEl || !bEl) return "TIE";
+  if (aEl === bEl) return "TIE";
+  const aBeats = ELEMENT_ADVANTAGE[aEl] || [];
+  const bBeats = ELEMENT_ADVANTAGE[bEl] || [];
+  if (aBeats.includes(bEl)) return "A";
+  if (bBeats.includes(aEl)) return "B";
+  return "TIE";
+}
+
+// Card wrapper
+function bossToCard(boss) {
+  const p = computePowerScore(boss.stats);
+  return {
+    id: crypto?.randomUUID?.() || `${Date.now()}_${Math.random()}`,
+    boss,
+    rarityKey: boss.rarity?.key || "common",
+    rarityPower: RARITY_POWER[boss.rarity?.key] || 1,
+    level: boss.stats?.level ?? 1,
+    element: boss.stats?.element?.key || "nature",
+    name: boss.name || "Unknown",
+    type: boss.type || "unknown",
+    stats: boss.stats || {},
+    powerScore: p,
+
+    cardHash: null
+  };
+}
+
+// ✅ shuffle (seeded optional)
+function shuffle(arr, rng = Math.random) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+async function generateDeck(count = 20) {
+  const deck = [];
+  for (let i = 0; i < count; i++) {
+    const boss = new PixelBoss();
+    const card = await bossToCardAsync(boss);
+    deck.push(card);
+  }
+  return shuffle(deck);
+}
+
+function resolveDuel(cardA, cardB) {
+  const reasons = [];
+  let aWins = 0;
+  let bWins = 0;
+
+  // CANCEL WILD: element advantage auto-wins
+  const el = elementOutcome(cardA.element, cardB.element);
+  if (el === "A")
+    return {
+      winner: "A",
+      aWins: 2,
+      bWins: 0,
+      reasons: ["CANCEL_WILD:element:A"]
+    };
+  if (el === "B")
+    return {
+      winner: "B",
+      aWins: 0,
+      bWins: 2,
+      reasons: ["CANCEL_WILD:element:B"]
+    };
+  reasons.push("element:TIE");
+
+  // Rarity comparison
+  if (cardA.rarityPower > cardB.rarityPower) {
+    aWins++;
+    reasons.push("rarity:A");
+  } else if (cardB.rarityPower > cardA.rarityPower) {
+    bWins++;
+    reasons.push("rarity:B");
+  } else reasons.push("rarity:TIE");
+
+  // Level comparison
+  if (cardA.level > cardB.level) {
+    aWins++;
+    reasons.push("level:A");
+  } else if (cardB.level > cardA.level) {
+    bWins++;
+    reasons.push("level:B");
+  } else reasons.push("level:TIE");
+
+  // 2-of-3 wins
+  if (aWins >= 2) return { winner: "A", aWins, bWins, reasons };
+  if (bWins >= 2) return { winner: "B", aWins, bWins, reasons };
+
+  // Tiebreak 1: your previous deterministic score (keeps old feel)
+  const aScore = cardA.rarityPower * 100 + cardA.level;
+  const bScore = cardB.rarityPower * 100 + cardB.level;
+
+  if (aScore > bScore)
+    return {
+      winner: "A",
+      aWins,
+      bWins,
+      reasons: reasons.concat(["tiebreak:A"])
+    };
+  if (bScore > aScore)
+    return {
+      winner: "B",
+      aWins,
+      bWins,
+      reasons: reasons.concat(["tiebreak:B"])
+    };
+
+  // Tiebreak 2: POWER SCORE (stats matter without changing core game)
+  const aPow =
+    typeof cardA.powerScore === "number"
+      ? cardA.powerScore
+      : computePowerScore(cardA.stats);
+  const bPow =
+    typeof cardB.powerScore === "number"
+      ? cardB.powerScore
+      : computePowerScore(cardB.stats);
+
+  if (aPow > bPow)
+    return {
+      winner: "A",
+      aWins,
+      bWins,
+      reasons: reasons.concat([`power:A:${aPow}-${bPow}`])
+    };
+  if (bPow > aPow)
+    return {
+      winner: "B",
+      aWins,
+      bWins,
+      reasons: reasons.concat([`power:B:${aPow}-${bPow}`])
+    };
+
+  // Final: coinflip
+  return {
+    winner: Math.random() < 0.5 ? "A" : "B",
+    aWins,
+    bWins,
+    reasons: reasons.concat(["coinflip"])
+  };
+}
+
+// ============================================================
+// CARD HASH (deterministic SHA-256) + Uniqueness checks
+// ============================================================
+
+// Stable stringify: sorts object keys so JSON order is deterministic
+function stableStringify(value) {
+  if (value === null || typeof value !== "object") return JSON.stringify(value);
+
+  if (Array.isArray(value)) {
+    return "[" + value.map(stableStringify).join(",") + "]";
+  }
+
+  const keys = Object.keys(value).sort();
+  return (
+    "{" +
+    keys
+      .map((k) => JSON.stringify(k) + ":" + stableStringify(value[k]))
+      .join(",") +
+    "}"
+  );
+}
+
+async function sha256Hex(str) {
+  // Browser SHA-256
+  const enc = new TextEncoder();
+  const bytes = enc.encode(str);
+
+  // crypto.subtle is supported in modern browsers + Wix front-end
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  const arr = Array.from(new Uint8Array(digest));
+  return arr.map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+async function finalizeMintData(card) {
+  if (!card?.boss) throw new Error("Card missing boss data.");
+
+  // Ensure computed powerScore is present
+  if (typeof card.powerScore !== "number") {
+    card.powerScore = computePowerScore(card.stats || card.boss.stats);
+  }
+  
+  // Compute deterministic hash
+  // ✅ Ensure DNA exists (same as preview/binder)
+  if (!card.dna) card.dna = buildCardDNAFromBoss(card.boss);
+  
+  // ✅ Use the exact same hashing as preview/binder
+  const hash = await computeCardHash(card.dna);
+  card.cardHash = hash;
+  
+  // Uniqueness check (local 1/1 enforcement)
+  if (inventoryHasHash(hash)) {
+    throw new Error(
+      "This exact 1/1 card already exists in your inventory (duplicate hash)."
+    );
+  }
+  
+  return card;
+}
+
+
+// --- helpers for legacy-proof hash reads ---
+
+async function resolveInventoryItemFromCard(card) {
+  const inv = loadLocalInventory();
+
+  // 1) If preview already has a hash, try it first
+  const directHash = card?.cardHash;
+  if (directHash) {
+    const hit = inv.find((x) => getInvHash(x) === directHash);
+    if (hit) return hit;
+  }
+
+  // 2) Otherwise compute a hash from DNA (must include pixels)
+  let dna = card?.dna;
+  if (!dna && card?.boss) dna = buildCardDNAFromBoss(card.boss);
+
+  if (dna) {
+    const computed = await computeCardHash(dna);
+    const hit = inv.find((x) => getInvHash(x) === computed);
+    if (hit) return hit;
+  }
+
+  return null;
+}
+
+
+
+function getInvHash(item) {
+  // Normalized hash getter for inventory records (supports legacy keys)
+  const h =
+    item?.cardHash ??
+    item?.hash ??
+    item?.id ??
+    item?.dna?.cardHash ??
+    item?.dna?.hash ??
+    null;
+
+  return h == null ? null : String(h).trim().toLowerCase();
+}
+
+// Robust duplicate check (handles older saved shapes)
+function getCardByHashFromInventory(cardHash) {
+  const h = String(cardHash).trim().toLowerCase();
+  const inv = loadLocalInventory();
+  const rec = inv.find((x) => getInvHash(x) === h);
+  if (!rec) return null;
+  // Reconstruct a renderable card object (same shape as getInventoryAsCards outputs)
+  const d = rec.dna;
+  const boss = new PixelBoss(d.type, {
+    seed: d.seed,
+    forcedPaletteIndex: d.paletteIndex,
+    forcedRarityKey: d.rarityKey,
+    forcedName: d.name,
+    forcedStats: d.stats,
+    forcedVariant: d.variantKey,
+    forcedPixels: d.pixels,
+    mintStatus: rec.mintStatus || null,
+    tokenId: rec.tokenId || null,
+    txHash: rec.txHash || null,
+  });
+  return {
+    boss,
+    dna: d,
+    cardHash: rec.cardHash || rec.hash || rec.id || d.cardHash,
+    rarityKey: d.rarityKey,
+    rarityPower: RARITY_POWER[d.rarityKey] || 1,
+    level: d.stats?.level ?? 1,
+    element: d.stats?.element?.key || "nature",
+    variantKey: d.variantKey,
+    name: d.name,
+    type: d.type,
+    stats: d.stats,
+    mintStatus: rec.mintStatus || null,
+    tokenId: rec.tokenId || null,
+    txHash: rec.txHash || null,
+  };
+}
+
+function inventoryHasHash(hash) {
+  const inv = loadLocalInventory();
+  return inv.some((x) => getInvHash(x) === String(hash).trim().toLowerCase());
+}
+
+// ✅ Inventory add should NOT mint
+async function addCardToInventory(card) {
+  const inv = loadLocalInventory();
+
+  // Ensure dna/hash exist
+  if (!card.dna) card.dna = buildCardDNAFromBoss(card.boss);
+  if (!card.cardHash) card.cardHash = await computeCardHash(card.dna);
+
+  // No dupes (legacy-safe)
+  if (inv.some((x) => getInvHash(x) === card.cardHash)) {
+    return false; // already in binder/inventory
+  }
+
+  inv.push({
+    schema: "BOSS_CARD_MINT_V1",
+    cardHash: card.cardHash,
+    dna: card.dna, // includes pixels
+    powerScore: card.powerScore ?? computePowerScore(card.stats || card.boss?.stats),
+    createdAt: new Date().toISOString(),
+
+    // 🔥 key change:
+    mintStatus: "UNMINTED",
+    chain: null,
+    contract: null,
+    tokenId: null,
+    txHash: null
+  });
+
+  saveLocalInventory(inv);
+  return true;
+}
+
+
+/**
+ * Build a deterministic "mintable identity" for a card.
+ * IMPORTANT: Include only immutable traits (no createdAt, no runtime ids, no owner).
+ */
+function getMintIdentityFromBoss(boss) {
+  return {
+    schema: "BOSS_CARD_V1",
+    seed: boss.seed,
+    type: boss.type,
+    paletteIndex: boss.paletteIndex,
+    rarityKey: boss.rarity?.key || "common",
+    variant: boss.variant || null,
+    name: boss.name,
+    // Stats included for uniqueness + mint metadata consistency
+    stats: boss.stats
+  };
+}
+
+function getMintRecordByHash(cardHash) {
+  const inv = loadLocalInventory();
+  const h = String(cardHash).trim().toLowerCase();
+  return inv.find((x) => getInvHash(x) === h) || null;
+}
+// ------------------------------------------------------------------
+// Mint backend stub (LOCAL)
+// Swap this with a real backend call (Wix HTTP function -> Polygon) later.
+// ------------------------------------------------------------------
+async function mintCardStub_Local(cardHash, card) {
+  // Simulate network latency
+  await new Promise((r) => setTimeout(r, 250));
+
+  // Deterministic-ish tokenId from hash (so refreshes feel consistent)
+  let n = 0;
+  const h = String(cardHash || "");
+  for (let i = 0; i < h.length; i++) n = (n * 33 + h.charCodeAt(i)) >>> 0;
+  const tokenId = String(n % 1000000000);
+
+  // Fake tx hash
+  const txHash = "0x" + (h.replace(/[^a-f0-9]/g, "a") + "0".repeat(64)).slice(0, 64);
+
+  return { tokenId, txHash };
+}
+
+
+function isCardMintedOrReady(cardHash) {
+  const inv = loadLocalInventory();
+  const item = inv.find((x) => getInvHash(x) === String(cardHash).trim().toLowerCase());
+  if (!item) return false;
+
+  // Ready (but not yet onchain) OR fully minted
+  if (item.mintStatus === "LOCAL_READY") return true;
+  if (item.mintStatus === "MINTED_ONCHAIN") return true;
+
+  // Legacy fields (if you ever stored them)
+  if (item.tokenId != null || item.txHash || item.contract) return true;
+
+  return false;
+}
+
+
+function isCardOnChainMinted(cardHash) {
+  const rec = getMintRecordByHash(cardHash);
+  return rec?.mintStatus === "MINTED_ONCHAIN";
+}
+
+// Returns a promise that resolves to a stable card hash
+async function computeCardHashFromBoss(boss) {
+  const identity = getMintIdentityFromBoss(boss);
+  const canonical = stableStringify(identity);
+  return sha256Hex(canonical);
+}
+
+const MINT_RECORDS_KEY = "BOSS_MINT_RECORDS_V1";
+
+function loadMintRecords() {
+  try {
+    return JSON.parse(localStorage.getItem(MINT_RECORDS_KEY) || "[]");
+  } catch {
+    return [];
+  }
+}
+
+function saveMintRecords(rows) {
+  localStorage.setItem(MINT_RECORDS_KEY, JSON.stringify(rows));
+}
+
+function getMintRecordByHash(cardHash) {
+  const rows = loadMintRecords();
+  return rows.find((x) => x.cardHash === cardHash) || null;
+}
+
+function upsertMintRecord(rec) {
+  const rows = loadMintRecords();
+  const i = rows.findIndex((x) => x.cardHash === rec.cardHash);
+  if (i >= 0) rows[i] = { ...rows[i], ...rec };
+  else rows.push(rec);
+  saveMintRecords(rows);
+}
+
+
+const INVENTORY_KEY = "BOSS_INVENTORY_V1";
+
+function loadInventory() {
+  try {
+    return JSON.parse(localStorage.getItem(INVENTORY_KEY) || "[]");
+  } catch {
+    return [];
+  }
+}
+
+function saveInventory(inv) {
+  localStorage.setItem(INVENTORY_KEY, JSON.stringify(inv));
+}
+
+function inventoryHasHash(cardHash) {
+  const inv = loadInventory();
+  return inv.some((x) => x.cardHash === cardHash);
+}
+
+// ============================================================
+// ✅ SAVE/LOAD DECK SYSTEM (Steps 3–6)
+// ============================================================
+function exportDeck(deck, deckName = "Untitled Deck") {
+  return {
+    version: 1,
+    createdAt: new Date().toISOString(),
+    deckName,
+    cards: deck.map((card) => {
+      const boss = card.boss || card; // allow passing bosses directly
+      return {
+        seed: boss.seed,
+        type: boss.type,
+        paletteIndex: boss.paletteIndex,
+        variant: boss.variant || null,
+        rarityKey: boss.rarity?.key || "common",
+        name: boss.name,
+        stats: boss.stats
+      };
+    })
+  };
+}
+
+function saveDeckToLocal(deck, deckName = "My Deck") {
+  const payload = exportDeck(deck, deckName);
+  const key = `BOSS_DECK_${deckName}`;
+  localStorage.setItem(key, JSON.stringify(payload));
+  return key;
+}
+
+function importDeck(payload) {
+  if (!payload || payload.version !== 1 || !Array.isArray(payload.cards)) {
+    throw new Error("Invalid deck format.");
+  }
+  return payload.cards.map((c) => {
+    const boss = new PixelBoss(c.type, {
+      seed: c.seed,
+      forcedPaletteIndex: c.paletteIndex,
+      forcedVariant: c.variant,
+      forcedRarityKey: c.rarityKey,
+      forcedName: c.name,
+      forcedStats: c.stats
+    });
+    return bossToCard(boss);
+  });
+}
+
+function loadDeckFromLocal(deckName = "My Deck") {
+  const key = `BOSS_DECK_${deckName}`;
+  const raw = localStorage.getItem(key);
+  if (!raw) throw new Error(`No saved deck found for: ${deckName}`);
+  return importDeck(JSON.parse(raw));
+}
+
+function downloadDeckFile(deck, deckName = "My Deck") {
+  const payload = exportDeck(deck, deckName);
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {
+    type: "application/json"
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${deckName.replace(/\s+/g, "_")}.bossdeck.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+async function loadDeckFromFile(file) {
+  const text = await file.text();
+  const payload = JSON.parse(text);
+  return importDeck(payload);
+}
+
+// Convenience helpers for match decks (optional)
+function saveMatchDecks(nameA = "PlayerA", nameB = "PlayerB") {
+  if (!match) return;
+  saveDeckToLocal(match.A.deck, nameA);
+  saveDeckToLocal(match.B.deck, nameB);
+}
+
+function loadMatchDecks(nameA = "PlayerA", nameB = "PlayerB") {
+  if (!match) newMatch();
+  match.A.deck = loadDeckFromLocal(nameA);
+  match.B.deck = loadDeckFromLocal(nameB);
+  match.A.active = match.A.deck.shift() || null;
+  match.B.active = match.B.deck.shift() || null;
+  match.turn = 0;
+  match.winner = null;
+  clearLog();
+  document.getElementById("winnerTop").textContent = "";
+  updateTopUI();
+  drawArena();
+  logLine(`Loaded decks: ${nameA} vs ${nameB}. Press START MATCH.`);
+}
+
+window.saveDeckToLocal = saveDeckToLocal;
+window.loadDeckFromLocal = loadDeckFromLocal;
+window.downloadDeckFile = downloadDeckFile;
+window.loadDeckFromFile = loadDeckFromFile;
+window.saveMatchDecks = saveMatchDecks;
+window.loadMatchDecks = loadMatchDecks;
+
+// ============================================================
+// UI + Match Controller (step-based PvP) (fixed setBreakdown bug)
+// ============================================================
+let match = null;
+let autoTimer = null;
+let autoOn = false;
+// Snapshot of the ORIGINAL full 20-card decks created at Generate Decks time
+let cachedFullDecks = { A: null, B: null }; // arrays of 20 cards each
+
+function drawPowerWatermark(
+  ctx,
+  boss,
+  titleX,
+  titleY,
+  titleW,
+  titleH,
+  scaleForText = SCALE
+) {
+  const power = computePowerScore(boss.stats);
+  const txt = `PWR ${power}`;
+
+  ctx.save();
+  ctx.imageSmoothingEnabled = false;
+
+  // Watermark style (neon + faint)
+  ctx.globalAlpha = 0.22;
+  ctx.fillStyle = boss.rarity?.colors?.glow || "#00f5d4";
+
+  // Use a slightly bigger font than title for legibility, but still subtle
+  const fontPx = Math.max(10, Math.floor(scaleForText * 1.1));
+  ctx.font = `${fontPx}px monospace`;
+  ctx.textBaseline = "middle";
+
+  // Rotate and place along the right side of title
+  // We rotate -90 degrees so text runs vertically
+  const x = Math.round(titleX + titleW - 2 * scaleForText); // near right inner edge
+  const y = Math.round(titleY + titleH / 2);
+
+  ctx.translate(x, y);
+  ctx.rotate(-Math.PI / 2);
+
+  // Shadow for glow punch (still subtle)
+  ctx.fillStyle = "#000000";
+  ctx.fillText(txt, 1, 1);
+
+  ctx.fillStyle = boss.rarity?.colors?.glow || "#00f5d4";
+  ctx.fillText(txt, 0, 0);
+
+  ctx.restore();
+  ctx.globalAlpha = 1;
+}
+
+function logLine(text) {
+  const el = document.getElementById("battleLog");
+  const line = document.createElement("div");
+  line.textContent = text;
+  el.appendChild(line);
+  el.scrollTop = el.scrollHeight;
+}
+
+function clearLog() {
+  const el = document.getElementById("battleLog");
+  el.innerHTML = "";
+}
+
+function labelForCard(card) {
+  if (!card) return "—";
+  const r = (card.rarityKey || "common").toUpperCase();
+  const e = (card.element || "—").toUpperCase();
+  return `${card.name} • ${r} • ${e} • LV ${card.level}`;
+}
+
+function updateTopUI() {
+  document.getElementById("aDeck").textContent = match.A.deck.length;
+  document.getElementById("bDeck").textContent = match.B.deck.length;
+  document.getElementById("aGrave").textContent = match.A.grave.length;
+  document.getElementById("bGrave").textContent = match.B.grave.length;
+
+  document.getElementById("aActiveLabel").textContent = labelForCard(
+    match.A.active
+  );
+  document.getElementById("bActiveLabel").textContent = labelForCard(
+    match.B.active
+  );
+
+  document.getElementById("roundNum").textContent = match.turn;
+}
+
+function setBreakdown(duel) {
+  const isCancelWild = duel.reasons?.some((r) => r.startsWith("CANCEL_WILD:"));
+
+  if (isCancelWild) {
+    document.getElementById("bdRarity").textContent = "—";
+    document.getElementById("bdLevel").textContent = "—";
+    document.getElementById("bdElement").textContent = duel.reasons[0].includes(
+      ":A"
+    )
+      ? "A (CANCEL WILD)"
+      : "B (CANCEL WILD)";
+    document.getElementById("bdWinner").textContent = duel.winner;
+    document.getElementById("bdPower").textContent = "—";
+
+    return;
+  }
+
+  const mapTag = (tag) => {
+    if (tag.endsWith(":A")) return "A";
+    if (tag.endsWith(":B")) return "B";
+    if (tag.endsWith(":TIE")) return "TIE";
+    return tag;
+  };
+
+  const r = duel.reasons.find((x) => x.startsWith("rarity:")) || "rarity:TIE";
+  const l = duel.reasons.find((x) => x.startsWith("level:")) || "level:TIE";
+  const e = duel.reasons.find((x) => x.startsWith("element:")) || "element:TIE";
+
+  document.getElementById("bdRarity").textContent = mapTag(r);
+  document.getElementById("bdLevel").textContent = mapTag(l);
+  document.getElementById("bdElement").textContent = mapTag(e);
+  document.getElementById("bdWinner").textContent = duel.winner;
+
+  const aPow =
+    match?.A?.active?.powerScore ?? computePowerScore(match?.A?.active?.stats);
+  const bPow =
+    match?.B?.active?.powerScore ?? computePowerScore(match?.B?.active?.stats);
+
+  document.getElementById("bdPower").textContent = `A ${aPow} vs B ${bPow}`;
+}
+
+function drawArena() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // The main battle canvas is now 600px wide, so shrink only the
+  // two active arena cards. The separate preview card still renders large.
+  const ARENA_ZOOM = 0.72;
+
+  const cardPxW = CARD_W * SCALE * ARENA_ZOOM;
+  const cardPxH = CARD_H * SCALE * ARENA_ZOOM;
+
+  const margin = Math.max(16, Math.floor(cardPxW * 0.22));
+  const leftX = margin;
+  const rightX = canvas.width - margin - cardPxW;
+  const y = Math.max(10, Math.floor((canvas.height - cardPxH) / 2));
+
+  ctx.save();
+  ctx.scale(ARENA_ZOOM, ARENA_ZOOM);
+
+  if (match?.A?.active) {
+    drawBossCard(
+      ctx,
+      match.A.active.boss,
+      leftX / ARENA_ZOOM,
+      y / ARENA_ZOOM
+    );
+  }
+
+  if (match?.B?.active) {
+    drawBossCard(
+      ctx,
+      match.B.active.boss,
+      rightX / ARENA_ZOOM,
+      y / ARENA_ZOOM
+    );
+  }
+
+  ctx.restore();
+
+  ctx.font = "24px monospace";
+  ctx.textBaseline = "middle";
+  ctx.fillStyle = "#ffffff";
+  ctx.fillText(
+    "VS",
+    Math.floor(canvas.width / 2) - 14,
+    Math.floor(canvas.height / 2)
+  );
+}
+
+async function newMatch() {
+  match = {
+    turn: 0,
+    A: { deck: await generateDeck(20), active: null, grave: [] },
+    B: { deck: await generateDeck(20), active: null, grave: [] },
+    winner: null
+  };
+
+  cachedFullDecks.A = match.A.deck.slice();
+  cachedFullDecks.B = match.B.deck.slice();
+
+  clearLog();
+  document.getElementById("winnerTop").textContent = "";
+
+  match.A.active = match.A.deck.shift() || null;
+  match.B.active = match.B.deck.shift() || null;
+
+  updateTopUI();
+  drawArena();
+  logLine("Decks generated & cached (full 20). Press START MATCH.");
+}
+
+function startMatch() {
+  if (!match) newMatch();
+  if (!match.A.active || !match.B.active) {
+    logLine("Cannot start: a player has no active card.");
+    return;
+  }
+  logLine("Match started. Press NEXT BATTLE.");
+}
+
+function stepBattle() {
+  if (!match || match.winner) return;
+
+  if (!match.A.active) {
+    match.winner = "B";
+    endMatch();
+    return;
+  }
+  if (!match.B.active) {
+    match.winner = "A";
+    endMatch();
+    return;
+  }
+
+  match.turn++;
+
+  const duel = resolveDuel(match.A.active, match.B.active);
+  setBreakdown(duel);
+
+  if (duel.winner === "A") {
+    match.B.grave.push(match.B.active);
+    match.B.active = match.B.deck.shift() || null;
+    logLine(`Round ${match.turn}: A wins (${duel.reasons.join(", ")})`);
+  } else {
+    match.A.grave.push(match.A.active);
+    match.A.active = match.A.deck.shift() || null;
+    logLine(`Round ${match.turn}: B wins (${duel.reasons.join(", ")})`);
+  }
+
+  if (!match.A.active) match.winner = "B";
+  if (!match.B.active) match.winner = "A";
+
+  updateTopUI();
+  drawArena();
+
+  if (match.winner) endMatch();
+}
+
+function endMatch() {
+  document.getElementById(
+    "winnerTop"
+  ).textContent = `WINNER: PLAYER ${match.winner}`;
+  logLine(`MATCH OVER — Winner: Player ${match.winner}`);
+  if (autoTimer) {
+    clearInterval(autoTimer);
+    autoTimer = null;
+    autoOn = false;
+  }
+  document.getElementById("btnAuto").textContent = "Auto: OFF";
+}
+
+function toggleAuto() {
+  autoOn = !autoOn;
+  document.getElementById("btnAuto").textContent = autoOn
+    ? "Auto: ON"
+    : "Auto: OFF";
+
+  if (autoOn) {
+    autoTimer = setInterval(() => {
+      if (!match || match.winner) return;
+      stepBattle();
+    }, 500);
+  } else {
+    if (autoTimer) clearInterval(autoTimer);
+    autoTimer = null;
+  }
+}
+
+function resetAll() {
+  if (autoTimer) clearInterval(autoTimer);
+  autoTimer = null;
+  autoOn = false;
+  document.getElementById("btnAuto").textContent = "Auto: OFF";
+
+  match = null;
+  clearLog();
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  document.getElementById("aDeck").textContent = "—";
+  document.getElementById("bDeck").textContent = "—";
+  document.getElementById("aGrave").textContent = "—";
+  document.getElementById("bGrave").textContent = "—";
+  document.getElementById("aActiveLabel").textContent = "—";
+  document.getElementById("bActiveLabel").textContent = "—";
+  document.getElementById("roundNum").textContent = "0";
+  document.getElementById("winnerTop").textContent = "";
+
+  document.getElementById("bdRarity").textContent = "—";
+  document.getElementById("bdLevel").textContent = "—";
+  document.getElementById("bdElement").textContent = "—";
+  document.getElementById("bdWinner").textContent = "—";
+  document.getElementById("bdPower").textContent = "—";
+
+  logLine("Reset complete.");
+}
+
+function saveFullCachedDeckToLocal(playerKey, deckName) {
+  const full = cachedFullDecks[playerKey];
+  if (!full || !Array.isArray(full) || full.length === 0) {
+    throw new Error(
+      `No cached deck for Player ${playerKey}. Click Generate Decks first.`
+    );
+  }
+  const payload = {
+    version: 1,
+    format: "CACHED_FULL_20",
+    deckName,
+    cards: full
+  };
+  localStorage.setItem(`bossDeck_full_${deckName}`, JSON.stringify(payload));
+}
+
+function downloadCachedDeckFile(playerKey, deckName) {
+  const full = cachedFullDecks[playerKey];
+  if (!full || !Array.isArray(full) || full.length === 0) {
+    throw new Error(
+      `No cached deck for Player ${playerKey}. Click Generate Decks first.`
+    );
+  }
+
+  const payload = {
+    version: 1,
+    format: "CACHED_FULL_20",
+    deckName,
+    cards: full
+  };
+
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {
+    type: "application/json"
+  });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `${deckName || playerKey}_deck.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+async function loadDeckCardsFromFile(file) {
+  const text = await file.text();
+  const data = JSON.parse(text);
+
+  if (data && Array.isArray(data.cards)) return data.cards;
+  if (Array.isArray(data)) return data; // fallback legacy
+  throw new Error("Deck JSON must be {cards:[...]} or an array.");
+}
+
+async function importIntoMatch(which, file) {
+  if (!file) return;
+  if (!match) newMatch();
+
+  try {
+    const cards = (await loadDeckCardsFromFile(file)).filter(Boolean);
+
+    if (cards.length < 1) throw new Error("Deck file is empty.");
+    // If they import 20, good. If they import 19, it will still work.
+
+    // cache it as the new "full deck" snapshot for that player
+    cachedFullDecks[which] = cards.slice();
+
+    // replace that player's CURRENT match deck with a fresh run from this deck
+    const P = which === "A" ? match.A : match.B;
+    P.grave = [];
+    P.deck = cards.slice(); // full list as draw pile
+    P.active = P.deck.shift() || null; // draw active (now deck shows 19 if it was 20)
+
+    // reset match top-level (optional, but clean)
+    match.turn = 0;
+    match.winner = null;
+    document.getElementById("winnerTop").textContent = "";
+    clearLog();
+
+    updateTopUI();
+    drawArena();
+    logLine(
+      `Imported Player ${which} deck & cached full deck. Press START MATCH.`
+    );
+  } catch (err) {
+    logLine(`Import failed (${which}): ${err.message}`);
+  } finally {
+    const el = document.getElementById(
+      which === "A" ? "fileImportA" : "fileImportB"
+    );
+    if (el) el.value = "";
+  }
+}
+
+async function renderCardPNGForMint(card, scaleMult = 2) {
+  // Temporarily render the card at bigger scale
+  const prevScale = window.SCALE;
+  const mintScale = prevScale * scaleMult;
+
+  const off = document.createElement("canvas");
+  off.width = CARD_W * mintScale;
+  off.height = CARD_H * mintScale;
+  const octx = off.getContext("2d");
+  octx.imageSmoothingEnabled = false;
+
+  // Temporarily swap SCALE used by drawBossCard / drawSprite
+  window.SCALE = mintScale;
+  drawBossCard(octx, card.boss, 0, 0);
+  window.SCALE = prevScale;
+
+  return new Promise((resolve) => {
+    off.toBlob((blob) => resolve(blob), "image/png");
+  });
+}
+
+async function prepareMintPayload(card) {
+  const dna = card.dna || buildCardDNAFromBoss(card.boss);
+  const cardHash = card.cardHash || (await computeCardHash(dna));
+  const imageBlob = await renderCardPNGForMint(card, 2);
+
+  // Metadata format (NFT attributes)
+  const metadata = {
+    name: `${dna.name} [${dna.set}]`,
+    description: `1/1 Genesis card. Hash: ${cardHash}`,
+    attributes: [
+      { trait_type: "Set", value: dna.set },
+      { trait_type: "Schema", value: String(dna.schemaVersion) },
+      { trait_type: "Type", value: dna.type },
+      { trait_type: "Rarity", value: dna.rarityKey },
+      { trait_type: "Element", value: dna.stats?.element?.key || "unknown" },
+      { trait_type: "Variant", value: dna.variantKey },
+      { trait_type: "Level", value: String(dna.stats?.level ?? 1) },
+      // optional: stats as traits
+      { trait_type: "HP", value: String(dna.stats?.hp ?? 0) },
+      { trait_type: "ATK", value: String(dna.stats?.atk ?? 0) },
+      { trait_type: "DEF", value: String(dna.stats?.def ?? 0) },
+      { trait_type: "MAG", value: String(dna.stats?.mag ?? 0) },
+      { trait_type: "SPD", value: String(dna.stats?.spd ?? 0) },
+      { trait_type: "CRIT", value: String(dna.stats?.crit ?? 0) },
+      { trait_type: "RESIST", value: String(dna.stats?.resist ?? 0) },
+      { trait_type: "CardHash", value: cardHash }
+    ],
+    // image will be uploaded by backend and filled with URI there
+    image: ""
+  };
+
+  return { dna, cardHash, metadata, imageBlob };
+}
+
+function updateInventoryItemByHash(cardHash, patch) {
+  const inv = loadLocalInventory(); // ✅ same inventory binder uses
+  const target = String(cardHash || "").trim().toLowerCase();
+  const idx = inv.findIndex((x) => getInvHash(x) === target);
+  if (idx === -1) return false;
+
+  // patch can be:
+  //  - a function: (item) => item
+  //  - an object: { mintStatus: "MINTED", tokenId: "...", txHash: "..." }
+  const patchFn =
+    typeof patch === "function"
+      ? patch
+      : (item) => Object.assign(item, patch || {});
+
+  const current = inv[idx];
+  const cloned = { ...current };
+  const next = patchFn(cloned) || cloned;
+
+  inv[idx] = next;
+  if (!saveLocalInventory(inv)) return false;
+  return true;
+}
+
+
+function setMintStatus(cardHash, status, extra = {}) {
+  return updateInventoryItemByHash(cardHash, (cur) => ({
+    ...cur,
+    mintStatus: status,
+    ...extra
+  }));
+}
+
+
+const INV_KEY = "bossgame_inventory_v1";
+
+function loadLocalInventory() {
+  try {
+    return JSON.parse(localStorage.getItem(INV_KEY) || "[]");
+  } catch {
+    return [];
+  }
+}
+
+function saveLocalInventory(inv) {
+  try {
+    localStorage.setItem(INV_KEY, JSON.stringify(inv));
+    return true;
+  } catch (e) {
+    console.error("saveLocalInventory failed", e);
+    return false;
+  }
+}
+
+// Store just DNA + hash + optional tokenId later
+function addToLocalInventory({
+  cardHash,
+  dna,
+  tokenId = null,
+  contract = null
+}) {
+  const inv = loadLocalInventory();
+  if (inv.some((x) => x.cardHash === cardHash)) return false; // no dupes locally either
+  inv.push({
+    cardHash,
+    dna,
+    tokenId,
+    contract,
+    addedAt: new Date().toISOString()
+  });
+  saveLocalInventory(inv);
+  return true;
+}
+
+document.getElementById("btnGen").addEventListener("click", () => newMatch());
+
+document.getElementById("btnStart").addEventListener("click", startMatch);
+document.getElementById("btnStep").addEventListener("click", stepBattle);
+document.getElementById("btnAuto").addEventListener("click", toggleAuto);
+document.getElementById("btnReset").addEventListener("click", resetAll);
+
+async function mintFromPreviewClicked() {
+  try {
+    const card = window.__previewCard || currentPreviewCard;
+    if (!card) {
+      logLine("❌ Mint failed: no card selected.");
+      return;
+    }
+
+    // Ensure we have DNA (for future on-chain mint) but DO NOT rely on a recomputed hash
+    // if we can pull the canonical hash from the stored inventory record.
+    if (!card.dna && card.boss) card.dna = buildCardDNAFromBoss(card.boss);
+
+    // Resolve the canonical inventory record for this card.
+    const inv = loadLocalInventory();
+    const norm = (v) => String(v || "").trim().toLowerCase();
+
+    let record = null;
+
+    // Prefer explicit cardHash (best case)
+    const directHash = norm(card.cardHash);
+    if (directHash) {
+      record = inv.find((x) => norm(x.cardHash) === directHash) || null;
+    }
+
+    // Fallback: match by DNA signature (seed + type is usually unique in your system)
+    if (!record && card.dna) {
+      record = inv.find((x) => {
+        const d = x?.dna;
+        return d && d.seed === card.dna.seed && d.type === card.dna.type;
+      }) || null;
+    }
+
+    // Last resort: compute hash from DNA (only if sha256Hex exists and DNA is present)
+    if (!record && card.dna) {
+      const computed = norm(await computeCardHash(card.dna));
+      if (computed) record = inv.find((x) => norm(x.cardHash) === computed) || null;
+      if (record && !card.cardHash) card.cardHash = record.cardHash;
+    }
+
+    if (!record) {
+      logLine("❌ Mint failed: card not found in inventory.");
+      return;
+    }
+
+    const hash = norm(record.cardHash);
+    if (!hash) {
+      logLine("❌ Mint failed: inventory record missing cardHash.");
+      return;
+    }
+
+    // Already minted?
+    if (record.mintStatus === "MINTED" || record.mintStatus === "PENDING") {
+      logLine(`✅ Already minted (${record.mintStatus}).`);
+      await refreshBinder();
+      return;
+    }
+
+    // ---- Local "mint" (placeholder for Polygon) ----
+    // IMPORTANT: This is where you'll later call your Wix backend to:
+    // 1) charge/collect fee  2) submit tx on Polygon  3) return tokenId + txHash
+    const tokenId = String(Date.now()); // placeholder
+    const txHash = "0x" + Math.random().toString(16).slice(2).padEnd(64, "0").slice(0, 64); // placeholder
+
+    // Update inventory record
+    record.mintStatus = "MINTED";
+    record.tokenId = tokenId;
+    record.txHash = txHash;
+
+    const ok = saveLocalInventory(inv);
+    if (!ok) {
+      logLine("❌ Mint failed: inventory update error.");
+      return;
+    }
+
+    // Update preview card fields too (so UI can reflect instantly)
+    card.cardHash = hash;
+    card.mintStatus = "MINTED";
+    card.tokenId = tokenId;
+    card.txHash = txHash;
+
+    logLine(`✅ Minted ${card.name || "card"} • Token #${tokenId}`);
+    await refreshBinder();
+  } catch (err) {
+    console.error(err);
+    logLine("❌ Mint failed: " + (err?.message || String(err)));
+  }
+}
+
+
+
+
+// DROP THIS INTO YOUR JS (near your other button hooks)
+// Requires the functions from the integrated script:
+// saveDeckToLocal, loadDeckFromLocal, downloadDeckFile, loadDeckFromFile, loadMatchDecks
+
+function getDeckNamesFromUI() {
+  const a =
+    (document.getElementById("deckNameA")?.value || "PlayerA").trim() ||
+    "PlayerA";
+  const b =
+    (document.getElementById("deckNameB")?.value || "PlayerB").trim() ||
+    "PlayerB";
+  return { a, b };
+}
+
+// Load both decks into current match (and redraw actives)
+document.getElementById("btnLoadDecks")?.addEventListener("click", () => {
+  const { a, b } = getDeckNamesFromUI();
+  try {
+    loadMatchDecks(a, b);
+    logLine(`Loaded decks: ${a} vs ${b}`);
+  } catch (err) {
+    logLine(`Load failed: ${err.message}`);
+  }
+});
+
+document.getElementById("btnSaveDecks")?.addEventListener("click", () => {
+  const a =
+    (document.getElementById("deckNameA")?.value || "PlayerA").trim() ||
+    "PlayerA";
+  const b =
+    (document.getElementById("deckNameB")?.value || "PlayerB").trim() ||
+    "PlayerB";
+
+  try {
+    saveFullCachedDeckToLocal("A", a);
+    saveFullCachedDeckToLocal("B", b);
+    logLine(`Saved FULL cached decks (20 each): ${a}, ${b}`);
+  } catch (e) {
+    logLine(`Save failed: ${e.message}`);
+  }
+});
+
+document.getElementById("btnExportA")?.addEventListener("click", () => {
+  const a =
+    (document.getElementById("deckNameA")?.value || "PlayerA").trim() ||
+    "PlayerA";
+  try {
+    downloadCachedDeckFile("A", a);
+    logLine(`Exported FULL cached deck A: ${a}`);
+  } catch (e) {
+    logLine(`Export failed: ${e.message}`);
+  }
+});
+
+document.getElementById("btnExportB")?.addEventListener("click", () => {
+  const b =
+    (document.getElementById("deckNameB")?.value || "PlayerB").trim() ||
+    "PlayerB";
+  try {
+    downloadCachedDeckFile("B", b);
+    logLine(`Exported FULL cached deck B: ${b}`);
+  } catch (e) {
+    logLine(`Export failed: ${e.message}`);
+  }
+});
+
+// Import A/B from file inputs (replaces current decks + resets match state)
+async function importIntoMatch(which, file) {
+  if (!file) return;
+  if (!match) newMatch();
+
+  try {
+    const importedDeck = await loadDeckFromFile(file);
+
+    // Replace deck + reset player state cleanly
+    match.turn = 0;
+    match.winner = null;
+    document.getElementById("winnerTop").textContent = "";
+    clearLog();
+
+    if (which === "A") {
+      match.A.deck = importedDeck;
+      match.A.grave = [];
+      match.A.active = match.A.deck.shift() || null;
+    } else {
+      match.B.deck = importedDeck;
+      match.B.grave = [];
+      match.B.active = match.B.deck.shift() || null;
+    }
+
+    // If both sides have actives, redraw arena
+    updateTopUI();
+    drawArena();
+    logLine(`Imported deck ${which} from file: ${file.name}`);
+    logLine("Press START MATCH.");
+  } catch (err) {
+    logLine(`Import failed (${which}): ${err.message}`);
+  } finally {
+    // reset file input so you can import same file again
+    const el = document.getElementById(
+      which === "A" ? "fileImportA" : "fileImportB"
+    );
+    if (el) el.value = "";
+  }
+}
+
+document.getElementById("fileImportA")?.addEventListener("change", (e) => {
+  const file = e.target.files?.[0];
+  importIntoMatch("A", file);
+});
+
+document.getElementById("fileImportB")?.addEventListener("change", (e) => {
+  const file = e.target.files?.[0];
+  importIntoMatch("B", file);
+});
+
+// ==============================
+// PREVIEW + BINDER VISUAL WIRING
+// ==============================
+
+const previewCanvas = document.getElementById("previewCanvas");
+const pctx = previewCanvas.getContext("2d");
+pctx.imageSmoothingEnabled = false;
+
+let currentPreviewCard = null;
+
+function renderPreviewCard(card) {
+  if (!card?.boss) return;
+
+  const baseW = CARD_W * SCALE;
+  const baseH = CARD_H * SCALE;
+
+  // Offscreen: draw card WITHOUT text
+  const off = document.createElement("canvas");
+  off.width = baseW;
+  off.height = baseH;
+
+  const octx = off.getContext("2d");
+  octx.imageSmoothingEnabled = false;
+
+  drawBossCard_NoText(octx, card.boss, 0, 0);
+
+  // Upscale
+  const MULT = 2; // 2 or 3
+  previewCanvas.width = baseW * MULT;
+  previewCanvas.height = baseH * MULT;
+
+  pctx.imageSmoothingEnabled = false;
+  pctx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+
+  pctx.drawImage(off, 0, 0, baseW * MULT, baseH * MULT);
+
+  // Re-draw crisp text AT FINAL SCALE
+  drawBossCard_TextOnly(pctx, card.boss, 0, 0, SCALE * MULT);
+}
+
+function metaHtmlForCard(card) {
+  const d = card.dna || buildCardDNAFromBoss(card.boss);
+  const el = d.stats?.element?.name || d.stats?.element?.key || "—";
+  const affix = d.stats?.affix
+    ? `<div>Affix: <b>${d.stats.affix}</b></div>`
+    : "";
+  return `
+    ${d.backstory ? `<div class="card-backstory"><em>${d.backstory}</em></div>` : ""}
+    <div>Name: <b>${d.name}</b></div>
+    <div>Set: <b>${d.set}</b> • Schema: <b>${d.schemaVersion}</b></div>
+    <div>Type: <b>${d.type}</b> • Variant: <b>${d.variantKey}</b></div>
+    <div>Rarity: <b>${d.rarityKey}</b> • Element: <b>${el}</b> • Level: <b>${
+    d.stats?.level ?? 1
+  }</b></div>
+    ${affix}
+    <div>Stats: HP <b>${d.stats?.hp ?? 0}</b> | ATK <b>${
+    d.stats?.atk ?? 0
+  }</b> | DEF <b>${d.stats?.def ?? 0}</b> | MAG <b>${
+    d.stats?.mag ?? 0
+  }</b> | SPD <b>${d.stats?.spd ?? 0}</b></div>
+  `;
+}
+
+async function setPreviewCard(card) {
+  if (!card) return;
+  currentPreviewCard = card;
+  window.__previewCard = card;
+
+  // Ensure dna/hash exist for lookup + minting
+  if (!card.dna) card.dna = buildCardDNAFromBoss(card.boss);
+  if (!card.cardHash) card.cardHash = await computeCardHash(card.dna);
+
+  renderPreviewCard(card);
+
+  const hashEl = document.getElementById("previewHash");
+  if (hashEl) hashEl.textContent = card.cardHash.slice(0, 16) + "…";
+
+  // Show mint badge in preview
+  const rec = getMintRecordByHash(card.cardHash);
+  const badgeEl = document.getElementById("previewMintBadge");
+  if (badgeEl) {
+    if (!rec) badgeEl.textContent = "";
+    else if (rec.mintStatus === "MINTED_ONCHAIN") badgeEl.textContent = "⛓️ Minted";
+    else if (rec.mintStatus === "MINTED") badgeEl.textContent = "⛓️ Minted (local)";
+    else badgeEl.textContent = "⛓️ Mint Ready";
+  }
+
+  const metaEl = document.getElementById("previewMeta");
+  if (metaEl) metaEl.innerHTML = metaHtmlForCard(card);
+}
+
+// ---------- Binder rendering ----------
+async function makeThumbDataURLFromCard(card) {
+  const baseW = CARD_W * SCALE;
+  const baseH = CARD_H * SCALE;
+
+  const off = document.createElement("canvas");
+  off.width = baseW;
+  off.height = baseH;
+
+  const o = off.getContext("2d");
+  o.imageSmoothingEnabled = false;
+  drawBossCard(o, card.boss, 0, 0);
+
+  // shrink to thumbnail size cleanly
+  const TW = 140;
+  const TH = Math.round((TW / baseW) * baseH);
+
+  const thumb = document.createElement("canvas");
+  thumb.width = TW;
+  thumb.height = TH;
+
+  const tctx = thumb.getContext("2d");
+  tctx.imageSmoothingEnabled = false;
+  tctx.drawImage(off, 0, 0, TW, TH);
+
+  return thumb.toDataURL("image/png");
+}
+
+function getInventoryAsCards() {
+  const inv = loadLocalInventory();
+  // Convert stored dna into renderable cards by reconstructing PixelBoss
+  return inv.map((item) => {
+    const d = item.dna;
+    const boss = new PixelBoss(d.type, {
+      seed: d.seed,
+      forcedPaletteIndex: d.paletteIndex,
+      forcedRarityKey: d.rarityKey,
+      forcedName: d.name,
+      forcedStats: d.stats,
+      forcedVariant: d.variantKey,
+      forcedPixels: d.pixels, // ✅ THIS IS THE KEY
+      forcedBackstory: d.backstory || "" ,
+      mintStatus: item.mintStatus || null,
+      tokenId: item.tokenId || null,
+      txHash: item.txHash || null
+    });
+    return {
+      boss,
+      dna: d,
+      cardHash: getInvHash(item),
+      rarityKey: d.rarityKey,
+      rarityPower: RARITY_POWER[d.rarityKey] || 1,
+      level: d.stats?.level ?? 1,
+      element: d.stats?.element?.key || "nature",
+      variantKey: d.variantKey,
+      name: d.name,
+      type: d.type,
+      stats: d.stats
+    };
+  });
+}
+
+function normalizeInventoryHashes() {
+  const inv = loadLocalInventory();
+  let changed = false;
+
+  for (const item of inv) {
+    if (!item.cardHash && item.hash) {
+      item.cardHash = item.hash;
+      changed = true;
+    }
+  }
+
+  if (changed) saveLocalInventory(inv);
+}
+
+// ==============================
+// BINDER FILTER STATE + HELPERS
+// ==============================
+// ==============================
+// BINDER FILTERS — FULL WIRING ✅
+// ==============================
+
+// If your project already has a binder list variable, we'll try to use it.
+// This patch keeps a canonical "all cards" list and re-renders from it.
+window.__binderAllCards = window.__binderAllCards || [];
+
+// ---- Filters state ----
+const binderFilters = {
+  search: "",
+  sort: "recent_desc",
+  element: "",
+  minted: "",         // "", "ready", "onchain", "none"
+  rarities: new Set(),// chip toggles
+  powMin: null,
+  powMax: null,
+  lvMin: null,
+  lvMax: null,
+  hpMin: null,
+  atkMin: null,
+  defMin: null,
+  magMin: null,
+  spdMin: null
+};
+
+// ---- Helpers ----
+const RARITY_ORDER = { common: 1, uncommon: 2, rare: 3, epic: 4, legendary: 5, mythic: 6 };
+
+function toNumOrNull(v) {
+  if (v === "" || v === null || v === undefined) return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+}
+
+function normStr(s) {
+  return String(s ?? "")
+    .toLowerCase()
+    .trim();
+}
+
+function getCardMeta(card) {
+  // Normalizes your different card shapes (match cards, binder cards, inv records)
+  const dna = card?.dna || (card?.boss ? buildCardDNAFromBoss(card.boss) : null);
+  const stats = card?.stats || dna?.stats || card?.boss?.stats || {};
+  const elementKey =
+    card?.element ||
+    stats?.element?.key ||
+    dna?.stats?.element?.key ||
+    card?.boss?.stats?.element?.key ||
+    "";
+
+  const rarityKey =
+    card?.rarityKey ||
+    dna?.rarityKey ||
+    card?.boss?.rarity?.key ||
+    "";
+
+  const name =
+    card?.name ||
+    dna?.name ||
+    card?.boss?.name ||
+    "";
+
+  const type =
+    card?.type ||
+    dna?.type ||
+    card?.boss?.type ||
+    "";
+
+  const variantKey =
+    card?.variantKey ||
+    dna?.variantKey ||
+    card?.boss?.variant ||
+    "";
+
+  const powerScore =
+    (typeof card?.powerScore === "number" ? card.powerScore : null) ??
+    (typeof stats?.powerScore === "number" ? stats.powerScore : null) ??
+    (stats ? computePowerScore(stats) : 0);
+
+  const level =
+    card?.level ??
+    stats?.level ??
+    dna?.stats?.level ??
+    0;
+
+  const cardHash =
+    card?.cardHash ||
+    card?.hash ||
+    card?.idHash ||
+    card?.mintHash ||
+    "";
+
+  const createdAt =
+    card?.createdAt ||
+    card?.addedAt ||
+    card?.mintedAt ||
+    "";
+
+  return { dna, stats, elementKey, rarityKey, name, type, variantKey, powerScore, level, cardHash, createdAt };
+}
+
+function cardTextHaystack(card) {
+  const m = getCardMeta(card);
+  const parts = [
+    m.name,
+    m.type,
+    m.rarityKey,
+    m.elementKey,
+    m.variantKey,
+    m.stats?.affix,
+    m.stats?.element?.name
+  ];
+  return normStr(parts.filter(Boolean).join(" "));
+}
+
+function isMintMatch(card, mintedFilter) {
+  if (!mintedFilter) return true;
+  const { cardHash } = getCardMeta(card);
+  if (!cardHash) return mintedFilter === "none"; // if no hash, treat as not minted
+
+  if (mintedFilter === "ready") return typeof isCardMintedOrReady === "function" ? isCardMintedOrReady(cardHash) : false;
+  if (mintedFilter === "onchain") return typeof isCardOnChainMinted === "function" ? isCardOnChainMinted(cardHash) : false;
+  if (mintedFilter === "none") {
+    const any = typeof isCardMintedOrReady === "function" ? isCardMintedOrReady(cardHash) : false;
+    return !any;
+  }
+  return true;
+}
+
+// ---- Core filter ----
+function applyBinderFilters(cards) {
+  const f = binderFilters;
+  const q = normStr(f.search);
+
+  return (cards || []).filter((card) => {
+    const m = getCardMeta(card);
+
+    // Search
+    if (q) {
+      const hay = cardTextHaystack(card);
+      if (!hay.includes(q)) return false;
+    }
+
+    // Element
+    if (f.element && normStr(m.elementKey) !== normStr(f.element)) return false;
+
+    // Minted
+    if (!isMintMatch(card, f.minted)) return false;
+
+    // Rarity chips
+    if (f.rarities.size > 0) {
+      const rk = normStr(m.rarityKey);
+      if (!f.rarities.has(rk)) return false;
+    }
+
+    // Power range
+    if (f.powMin !== null && m.powerScore < f.powMin) return false;
+    if (f.powMax !== null && m.powerScore > f.powMax) return false;
+
+    // Level range
+    if (f.lvMin !== null && m.level < f.lvMin) return false;
+    if (f.lvMax !== null && m.level > f.lvMax) return false;
+
+    // Stats mins
+    const hp = Number(m.stats?.hp ?? 0);
+    const atk = Number(m.stats?.atk ?? 0);
+    const def = Number(m.stats?.def ?? 0);
+    const mag = Number(m.stats?.mag ?? 0);
+    const spd = Number(m.stats?.spd ?? 0);
+
+    if (f.hpMin !== null && hp < f.hpMin) return false;
+    if (f.atkMin !== null && atk < f.atkMin) return false;
+    if (f.defMin !== null && def < f.defMin) return false;
+    if (f.magMin !== null && mag < f.magMin) return false;
+    if (f.spdMin !== null && spd < f.spdMin) return false;
+
+    return true;
+  });
+}
+
+// ---- Sorting ----
+function sortBinderCards(cards) {
+  const mode = binderFilters.sort || "recent_desc";
+  const arr = (cards || []).slice();
+
+  function byRecent(a, b) {
+    const aa = Date.parse(getCardMeta(a).createdAt || "") || 0;
+    const bb = Date.parse(getCardMeta(b).createdAt || "") || 0;
+    return bb - aa;
+  }
+  function byName(a, b) {
+    const aa = normStr(getCardMeta(a).name);
+    const bb = normStr(getCardMeta(b).name);
+    return aa.localeCompare(bb);
+  }
+  function byRarity(a, b) {
+    const ra = RARITY_ORDER[normStr(getCardMeta(a).rarityKey)] || 0;
+    const rb = RARITY_ORDER[normStr(getCardMeta(b).rarityKey)] || 0;
+    return rb - ra;
+  }
+  function byPower(a, b) {
+    return (getCardMeta(b).powerScore || 0) - (getCardMeta(a).powerScore || 0);
+  }
+  function byLevel(a, b) {
+    return (getCardMeta(b).level || 0) - (getCardMeta(a).level || 0);
+  }
+
+  switch (mode) {
+    case "recent_asc":  arr.sort((a,b)=>-byRecent(a,b)); break;
+    case "recent_desc": arr.sort(byRecent); break;
+
+    case "name_asc":    arr.sort(byName); break;
+    case "name_desc":   arr.sort((a,b)=>-byName(a,b)); break;
+
+    case "rarity_asc":  arr.sort((a,b)=>-byRarity(a,b)); break;
+    case "rarity_desc": arr.sort(byRarity); break;
+
+    case "power_asc":   arr.sort((a,b)=>-byPower(a,b)); break;
+    case "power_desc":  arr.sort(byPower); break;
+
+    case "level_asc":   arr.sort((a,b)=>-byLevel(a,b)); break;
+    case "level_desc":  arr.sort(byLevel); break;
+
+    default:
+      arr.sort(byRecent);
+  }
+  return arr;
+}
+
+// ---- Render adapter ----
+// If you already have a binder renderer, we call it.
+// Otherwise we do a minimal render using any precomputed thumb URL on the card.
+function renderBinderGridSafe(cards) {
+  if (typeof window.renderBinderGrid === "function") {
+    window.renderBinderGrid(cards);
+    return;
+  }
+
+  const grid = document.getElementById("binderGrid");
+  if (!grid) return;
+
+  grid.innerHTML = "";
+  for (const card of cards) {
+    const m = getCardMeta(card);
+    const div = document.createElement("div");
+    div.className = "binder-card";
+
+    // Try common thumb fields if your existing code stores them
+    const thumb =
+      card?.thumbUrl ||
+      card?.thumbDataUrl ||
+      card?.thumb ||
+      card?.image ||
+      "";
+
+    div.innerHTML = `
+      <div class="thumb-wrap" style="position:relative;">
+        ${thumb ? `<img class="binder-thumb" src="${thumb}" />` : `<div class="binder-thumb" style="height:180px; background:#111; border-radius:8px;"></div>`}
+      </div>
+      <div class="binder-label">${m.name || "Unknown"}</div>
+    `;
+
+    grid.appendChild(div);
+  }
+}
+
+// ---- Meta counts ----
+function updateBinderMeta(shown, total) {
+  const shownEl = document.getElementById("binderShown");
+  const totalEl = document.getElementById("binderCountMeta");
+  const countEl = document.getElementById("binderCount");
+
+  if (shownEl) shownEl.textContent = String(shown ?? 0);
+  if (totalEl) totalEl.textContent = String(total ?? 0);
+  if (countEl) countEl.textContent = String(total ?? 0);
+}
+
+async function refreshBinder() {
+  const all = getInventoryAsCards();          // always pull fresh inventory
+  window.__binderAllCards = all.slice();      // keep your “source list” updated
+
+  const filtered = applyBinderFilters(all);   // use your current filter logic
+
+  // Count
+  const countEl = document.getElementById("binderCount");
+  if (countEl) countEl.textContent = `${filtered.length}`;
+
+  // Render filtered cards using the SAME renderer that works unfiltered
+  await renderBinderList(filtered);
+}
+
+
+// ---- Attach UI listeners ----
+function wireBinderFilters() {
+  const elSearch = document.getElementById("bfSearch");
+  const elSort = document.getElementById("bfSort");
+  const elElement = document.getElementById("bfElement");
+  const elMinted = document.getElementById("bfMinted");
+
+  const elPowMin = document.getElementById("bfPowMin");
+  const elPowMax = document.getElementById("bfPowMax");
+  const elLvMin = document.getElementById("bfLvMin");
+  const elLvMax = document.getElementById("bfLvMax");
+
+  const elHP = document.getElementById("bfHP");
+  const elATK = document.getElementById("bfATK");
+  const elDEF = document.getElementById("bfDEF");
+  const elMAG = document.getElementById("bfMAG");
+  const elSPD = document.getElementById("bfSPD");
+
+  const elReset = document.getElementById("bfReset");
+  const chipsWrap = document.getElementById("bfRarityChips");
+
+  // Text inputs
+  elSearch?.addEventListener("input", () => {
+    binderFilters.search = elSearch.value || "";
+    refreshBinder();
+  });
+
+  // Selects
+  elSort?.addEventListener("change", () => {
+    binderFilters.sort = elSort.value || "recent_desc";
+    refreshBinder();
+  });
+
+  elElement?.addEventListener("change", () => {
+    binderFilters.element = elElement.value || "";
+    refreshBinder();
+  });
+
+  elMinted?.addEventListener("change", () => {
+    binderFilters.minted = elMinted.value || "";
+    refreshBinder();
+  });
+
+  // Numeric ranges
+  function wireNum(el, key) {
+    el?.addEventListener("input", () => {
+      binderFilters[key] = toNumOrNull(el.value);
+      refreshBinder();
+    });
+  }
+
+  wireNum(elPowMin, "powMin");
+  wireNum(elPowMax, "powMax");
+  wireNum(elLvMin, "lvMin");
+  wireNum(elLvMax, "lvMax");
+
+  wireNum(elHP, "hpMin");
+  wireNum(elATK, "atkMin");
+  wireNum(elDEF, "defMin");
+  wireNum(elMAG, "magMin");
+  wireNum(elSPD, "spdMin");
+
+  // Rarity chips toggle
+  if (chipsWrap) {
+    chipsWrap.addEventListener("click", (e) => {
+      const btn = e.target.closest(".chip");
+      if (!btn) return;
+      const r = normStr(btn.dataset.r);
+      if (!r) return;
+
+      if (binderFilters.rarities.has(r)) {
+        binderFilters.rarities.delete(r);
+        btn.classList.remove("on");
+      } else {
+        binderFilters.rarities.add(r);
+        btn.classList.add("on");
+      }
+      refreshBinder();
+    });
+  }
+
+  // Reset
+  elReset?.addEventListener("click", () => {
+    binderFilters.search = "";
+    binderFilters.sort = "recent_desc";
+    binderFilters.element = "";
+    binderFilters.minted = "";
+    binderFilters.rarities.clear();
+
+    binderFilters.powMin = null;
+    binderFilters.powMax = null;
+    binderFilters.lvMin = null;
+    binderFilters.lvMax = null;
+
+    binderFilters.hpMin = null;
+    binderFilters.atkMin = null;
+    binderFilters.defMin = null;
+    binderFilters.magMin = null;
+    binderFilters.spdMin = null;
+
+    if (elSearch) elSearch.value = "";
+    if (elSort) elSort.value = "recent_desc";
+    if (elElement) elElement.value = "";
+    if (elMinted) elMinted.value = "";
+    if (elPowMin) elPowMin.value = "";
+    if (elPowMax) elPowMax.value = "";
+    if (elLvMin) elLvMin.value = "";
+    if (elLvMax) elLvMax.value = "";
+    if (elHP) elHP.value = "";
+    if (elATK) elATK.value = "";
+    if (elDEF) elDEF.value = "";
+    if (elMAG) elMAG.value = "";
+    if (elSPD) elSPD.value = "";
+
+    // clear chip UI
+    chipsWrap?.querySelectorAll(".chip.on").forEach((b) => b.classList.remove("on"));
+
+    refreshBinder();
+  });
+
+  // Initial meta update
+  refreshBinder();
+}
+
+// Call wiring once DOM exists
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", wireBinderFilters);
+} else {
+  wireBinderFilters();
+}
+
+// ---- Optional: public function so your existing binder code can set the source list ----
+window.setBinderCards = function setBinderCards(cards) {
+  window.__binderAllCards = Array.isArray(cards) ? cards.slice() : [];
+  // also mirror to binderCards if you want everything consistent
+  window.binderCards = window.__binderAllCards;
+  refreshBinder();
+};
+
+function renderDeckPanel() {
+  const db = window.deckBuilder;
+  const panel = document.getElementById("deckPanel");
+  if (!panel || !db) return;
+
+  const hashes = Array.from(db.selected.keys());
+  const count = getDeckCount();
+
+  panel.innerHTML = `
+    <div class="deck-head">
+      <div class="deck-title">
+        <input id="deckNameInput" value="${escapeHtml(db.activeDeckName)}" />
+      </div>
+      <div class="deck-count">${count} / ${db.maxSize}</div>
+      <div class="deck-actions">
+        <button id="deckSaveBtn">Save</button>
+        <button id="deckLoadBtn">Load</button>
+        <button id="deckExportBtn">Export</button>
+        <button id="deckImportBtn">Import</button>
+        <button id="deckClearBtn">Clear</button>
+      </div>
+    </div>
+    <div class="deck-list">
+      ${hashes.map(h => `<div class="deck-item">
+        <code>${h.slice(0,8)}</code>
+        <button data-remove="${h}">Remove</button>
+      </div>`).join("")}
+    </div>
+  `;
+
+  // Wire inputs/buttons
+  panel.querySelector("#deckNameInput")?.addEventListener("input", (e) => {
+    db.activeDeckName = e.target.value || "My Deck";
+  });
+
+  panel.querySelector("#deckClearBtn")?.addEventListener("click", () => {
+    db.selected.clear();
+    renderDeckPanel();
+    refreshBinder();
+  });
+
+  panel.querySelectorAll("button[data-remove]")?.forEach(btn => {
+    btn.addEventListener("click", () => {
+      db.selected.delete(btn.dataset.remove);
+      renderDeckPanel();
+      refreshBinder();
+    });
+  });
+
+  panel.querySelector("#deckSaveBtn")?.addEventListener("click", saveActiveDeck);
+  panel.querySelector("#deckLoadBtn")?.addEventListener("click", showDeckLoadMenu);
+  panel.querySelector("#deckExportBtn")?.addEventListener("click", exportActiveDeckJSON);
+  panel.querySelector("#deckImportBtn")?.addEventListener("click", importDeckJSONPrompt);
+}
+
+function escapeHtml(s=""){return s.replace(/[&<>"']/g,m=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;" }[m]));}
+
+function buildDeckJSON() {
+  const db = window.deckBuilder;
+  const hashes = Array.from(db.selected.keys());
+  return {
+    version: 1,
+    name: db.activeDeckName,
+    maxSize: db.maxSize,
+    createdAt: new Date().toISOString(),
+    cards: hashes, // or [{cardHash, qty}] if duplicates
+  };
+}
+
+function saveActiveDeck() {
+  const deck = buildDeckJSON();
+  const key = `DECK_${deck.name}`; // you may want a sanitized key
+  localStorage.setItem(key, JSON.stringify(deck));
+  localStorage.setItem("DECK_LAST", key);
+  console.log("Saved deck:", key, deck);
+}
+
+function loadDeckFromKey(key) {
+  const raw = localStorage.getItem(key);
+  if (!raw) return;
+
+  const deck = JSON.parse(raw);
+  const db = window.deckBuilder;
+
+  db.activeDeckName = deck.name || "My Deck";
+  db.maxSize = deck.maxSize || db.maxSize;
+  db.selected.clear();
+
+  for (const h of (deck.cards || [])) db.selected.set(h, 1);
+
+  renderDeckPanel();
+  refreshBinder();
+}
+
+function showDeckLoadMenu() {
+  const keys = Object.keys(localStorage).filter(k => k.startsWith("DECK_")).sort();
+  const pick = prompt("Enter deck key to load:\n" + keys.join("\n"));
+  if (pick) loadDeckFromKey(pick);
+}
+
+function exportActiveDeckJSON() {
+  const deck = buildDeckJSON();
+  const blob = new Blob([JSON.stringify(deck, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `${deck.name || "deck"}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function importDeckJSONPrompt() {
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = "application/json";
+  input.addEventListener("change", async () => {
+    const file = input.files?.[0];
+    if (!file) return;
+    const txt = await file.text();
+    const deck = JSON.parse(txt);
+
+    // Load into builder
+    const db = window.deckBuilder;
+    db.activeDeckName = deck.name || "Imported Deck";
+    db.maxSize = deck.maxSize || db.maxSize;
+    db.selected.clear();
+    for (const h of (deck.cards || [])) db.selected.set(h, 1);
+
+    renderDeckPanel();
+    refreshBinder();
+  });
+  input.click();
+}
+
+
+function getDeckCount() {
+  let n = 0;
+  for (const qty of window.deckBuilder.selected.values()) n += qty;
+  return n;
+}
+
+function toggleDeckCard(card) {
+  const db = window.deckBuilder;
+  if (!db || !card?.cardHash) return;
+
+  const h = card.cardHash;
+  const has = db.selected.has(h);
+
+  // If removing
+  if (has) {
+    db.selected.delete(h);
+  } else {
+    // If adding
+    if (getDeckCount() >= db.maxSize) {
+      // You can swap this for a toast UI
+      console.warn("Deck full");
+      return;
+    }
+    db.selected.set(h, 1);
+  }
+
+  renderDeckPanel();
+  // Re-render binder to reflect selection highlight (cheap enough; later we can diff)
+  refreshBinder();
+}
+
+
+async function renderBinderList(cards) {
+  const grid = document.getElementById("binderGrid");
+  grid.innerHTML = "";
+
+  for (const card of cards) {
+    const thumb = await makeThumbDataURLFromCard(card);
+
+    const el = document.createElement("div");
+    el.className = "binder-card";
+
+    const rec = getMintRecordByHash(card.cardHash);
+let mintedIcon = "";
+if (rec) {
+  const onchain = rec.mintStatus === "MINTED_ONCHAIN";
+  mintedIcon = onchain
+    ? `<div class="mint-badge onchain" style="position:absolute;top:4px;left:4px;z-index:5;background:rgba(0,0,0,0.65);border-radius:6px;padding:2px 4px;font-size:12px;line-height:1;" title="Minted on-chain">⛓️</div>`
+    : `<div class="mint-badge" style="position:absolute;top:4px;left:4px;z-index:5;background:rgba(0,0,0,0.65);border-radius:6px;padding:2px 4px;font-size:12px;line-height:1;" title="Mint-ready (local)">🪙</div>`;
+}
+
+    el.innerHTML = `
+      <div class="thumb-wrap" style="position:relative;">
+        <img class="binder-thumb" src="${thumb}" alt="card">
+        ${mintedIcon}
+      </div>
+      <div class="binder-label">${card.name}</div>
+      <div class="binder-label">${(card.rarityKey || "").toUpperCase()} • ${(card.element || "").toUpperCase()}</div>
+    `;
+
+    el.addEventListener("click", (e) => {
+  if (window.deckBuilder?.enabled) {
+    toggleDeckCard(card);
+    // Optional: prevent preview when in deck mode
+    return;
+  }
+  setPreviewCard(card);
+      
+      const isSelected = window.deckBuilder?.selected?.has(card.cardHash);
+if (isSelected) el.classList.add("binder-card--selected");
+
+});
+
+
+    grid.appendChild(el);
+  }
+}
+
+
+
+async function renderBinder() {
+  const grid = document.getElementById("binderGrid");
+  grid.innerHTML = "";
+
+  const cards = getInventoryAsCards();
+  document.getElementById("binderCount").textContent = String(cards.length);
+
+  for (const card of cards) {
+    const thumb = await makeThumbDataURLFromCard(card);
+
+    const el = document.createElement("div");
+    el.className = "binder-card";
+
+   const rec = getMintRecordByHash(card.cardHash);
+let mintedIcon = "";
+if (rec) {
+  const onchain = rec.mintStatus === "MINTED_ONCHAIN";
+  mintedIcon = onchain
+    ? `<div class="mint-badge onchain" style="position:absolute;top:4px;left:4px;z-index:5;background:rgba(0,0,0,0.65);border-radius:6px;padding:2px 4px;font-size:12px;line-height:1;" title="Minted on-chain">⛓️</div>`
+    : `<div class="mint-badge" style="position:absolute;top:4px;left:4px;z-index:5;background:rgba(0,0,0,0.65);border-radius:6px;padding:2px 4px;font-size:12px;line-height:1;" title="Mint-ready (local)">🪙</div>`;
+}
+
+    el.innerHTML = `
+  <div class="thumb-wrap" style="position:relative;">
+    <img class="binder-thumb" src="${thumb}" alt="card">
+    ${mintedIcon}
+  </div>
+  <div class="binder-label">${card.name}</div>
+  <div class="binder-label">${(card.rarityKey || "").toUpperCase()} • ${(
+      card.element || ""
+    ).toUpperCase()}</div>
+`;
+
+    el.addEventListener("click", () => setPreviewCard(card));
+    grid.appendChild(el);
+  }
+}
+
+function onMintSuccess({ cardHash, chain, contract, tokenId, txHash }) {
+  // 1) update storage immediately
+  updateInventoryItemByHash(cardHash, (item) => ({
+    ...item,
+    mintStatus: "MINTED_ONCHAIN",
+    chain: chain || item.chain || "EVM",
+    contract: contract || item.contract || null,
+    tokenId: tokenId ?? item.tokenId ?? null,
+    txHash: txHash || item.txHash || null,
+    mintedAt: new Date().toISOString()
+  }));
+
+  // 2) update UI immediately
+  if (typeof renderBinder === "function") renderBinder();
+  
+   if (!ok) {
+    logLine("❌ Mint failed: card not found in inventory.");
+    return;
+  }
+
+  logLine(`✅ Minted! Token #${tokenId ?? "?"} (${(chain || "EVM")})`);
+  
+  refreshBinder?.();
+  renderBinder?.();
+}
+
+
+
+function updateInventoryItemByHash(cardHash, patchFn) {
+  const inv = loadInventory(); // BOSS_INVENTORY_V1
+  const idx = inv.findIndex((x) => x.cardHash === cardHash);
+  if (idx === -1) return false;
+
+  const next = patchFn({ ...inv[idx] }) || inv[idx];
+  inv[idx] = next;
+  saveInventory(inv);
+  return true;
+}
+
+// ---------- Actions ----------
+document.getElementById("btnPreviewA")?.addEventListener("click", () => {
+  if (!match?.A?.active) return;
+  setPreviewCard(match.A.active);
+});
+
+document.getElementById("btnPreviewB")?.addEventListener("click", () => {
+  if (!match?.B?.active) return;
+  setPreviewCard(match.B.active);
+});
+
+document
+  .getElementById("btnAddActiveA")
+  ?.addEventListener("click", async () => {
+    const card = match?.A?.active;
+    if (!card) return;
+    if (!card.dna) card.dna = buildCardDNAFromBoss(card.boss);
+    if (!card.cardHash) card.cardHash = await computeCardHash(card.dna);
+    console.log("[ADD] boss dna:", dumpBossDNA(card.boss));
+console.log("[ADD] boss shape hash:", pixelsChecksum(card.boss.pixels));
+
+    const ok = addToLocalInventory({ cardHash: card.cardHash, dna: card.dna });
+  console.log("[ADD] saved dna:", card.dna);
+
+    logLine(ok ? "Added Active A to Binder." : "Already in Binder (1/1).");
+    await renderBinder();
+  });
+
+document
+  .getElementById("btnAddActiveB")
+  ?.addEventListener("click", async () => {
+    const card = match?.B?.active;
+    if (!card) return;
+    if (!card.dna) card.dna = buildCardDNAFromBoss(card.boss);
+    if (!card.cardHash) card.cardHash = await computeCardHash(card.dna);
+
+    const ok = addToLocalInventory({ cardHash: card.cardHash, dna: card.dna });
+    logLine(ok ? "Added Active B to Binder." : "Already in Binder (1/1).");
+    await renderBinder();
+  });
+
+document
+  .getElementById("btnShowBinder")
+  ?.addEventListener("click", async () => {
+    const wrap = document.getElementById("binderWrap");
+    const show = wrap.style.display === "none";
+    wrap.style.display = show ? "block" : "none";
+    if (show) await renderBinder();
+  });
+
+document.getElementById("btnClearBinder")?.addEventListener("click", (e) => {
+  e.preventDefault();
+
+  // Binder list is stored in INV_KEY (bossgame_inventory_v1)
+  const inv = loadLocalInventory();
+
+  // Keep minted only (supports both schemas)
+  const kept = inv.filter((item) => {
+    // If you store mintStatus on the item:
+    if (item?.mintStatus === "MINTED_ONCHAIN") return true;
+
+    // If minted info is stored on the item:
+    if (item?.tokenId != null || item?.txHash || item?.contract) return true;
+
+    // If you store it inside dna:
+    if (item?.dna?.tokenId != null || item?.dna?.txHash || item?.dna?.contract) return true;
+    if (item?.dna?.mintStatus === "MINTED_ONCHAIN") return true;
+
+    return false;
+  });
+
+  saveLocalInventory(kept);
+
+  logLine(`Cleared Binder (Local). Kept ${kept.length} minted card(s).`);
+  if (typeof renderBinder === "function") renderBinder();
+});
+
+document
+  .getElementById("btnExportPreview")
+  ?.addEventListener("click", async () => {
+    if (!currentPreviewCard) return;
+    const d =
+      currentPreviewCard.dna || buildCardDNAFromBoss(currentPreviewCard.boss);
+    const h = currentPreviewCard.cardHash || (await computeCardHash(d));
+
+    const payload = { version: 1, cardHash: h, dna: d };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], {
+      type: "application/json"
+    });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `${(d.name || "card").replace(/\s+/g, "_")}_${h.slice(
+      0,
+      8
+    )}.card.json`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+
+// Optional: auto-render binder count on load
+(async function initBinderUI() {
+  try {
+    await renderBinder();
+  } catch {}
+})();
+
+document.getElementById("btnMintPreview")?.addEventListener("click", () => {
+  mintFromPreviewClicked();
+});
+
+
+window.addEventListener("load", () => {
+  try { refreshBinder(); } catch (e) {}
+});
+
+document.getElementById("deckModeBtn")?.addEventListener("click", () => {
+  window.deckBuilder.enabled = !window.deckBuilder.enabled;
+  document.getElementById("deckModeBtn").textContent =
+    `Deck Builder: ${window.deckBuilder.enabled ? "ON" : "OFF"}`;
+  renderDeckPanel();
+  refreshBinder();
+});
+
+normalizeInventoryHashes();
+newMatch();
+
+
+// =============================================================================
+// GENESIS LORE ENGINE — Backstory Generator
+// Drop this AFTER your existing card generator code, BEFORE the closing scripts.
+//
+// INTEGRATION STEPS (3 places to touch in your existing code):
+//
+//  1. In PixelBoss constructor, after stats are assigned, add:
+//       this.backstory = generateBackstory(this);
+//
+//  2. In buildCardDNAFromBoss(), add to the returned object:
+//       backstory: boss.backstory || ""
+//
+//  3. In metaHtmlForCard(), add inside the returned template string:
+//       ${d.backstory ? `<div class="card-backstory"><em>${d.backstory}</em></div>` : ""}
+//
+// That's it. Every card will now have a seeded, deterministic backstory
+// stored in its DNA and shown in the preview/binder panel.
+// =============================================================================
+
+
+// =============================================================================
+// THE GENESIS LORE BIBLE
+// All story fragments pull from this shared world — so cards feel connected.
+// =============================================================================
+
+const GENESIS_LORE = {
+
+  // ---------------------------------------------------------------------------
+  // THE CREATION MYTH
+  // The cosmic event that all card types reference in some way.
+  // ---------------------------------------------------------------------------
+  myth: {
+    name: "The Genesis Chain",
+    cataclysm: "The Unraveling",
+    cataclysmDesc: "the moment the Genesis Chain — a living ledger of cosmic truth — was shattered by those who sought to own it",
+    era: {
+      before: "the Age of the Unbroken Chain",
+      after:  "the Shattered Age"
+    },
+    artifact: "a shard of the Genesis Chain", // powerful cards carry one
+    forge:    "the Null Forge",               // where mythic cards were made
+    prophecy: "The Recompile",                // the foretold restoration
+  },
+
+  // ---------------------------------------------------------------------------
+  // FACTIONS — tied to your 7 elements
+  // Each has: name, motto, homeLocation, enemy factions, role in The Unraveling
+  // ---------------------------------------------------------------------------
+  factions: {
+    blood: {
+      name:     "The Crimson Ledger",
+      motto:    "Debt is eternal. So are we.",
+      home:     "the Debt Vaults of Skarrath",
+      role:     "They triggered The Unraveling by forging a false entry in the Genesis Chain, attempting to claim infinite power",
+      enemies:  ["arcane", "radiant"],
+      allies:   ["void"],
+      adjective: "Ledger-sworn"
+    },
+    inferno: {
+      name:     "The Ashveil Dominion",
+      motto:    "Burn the old block. Write the new.",
+      home:     "the Ashveil Citadel",
+      role:     "They were the first to profit from The Unraveling, seizing Chain shards to fuel their war engines",
+      enemies:  ["nature", "frost"],
+      allies:   ["blood"],
+      adjective: "Ashveil-branded"
+    },
+    radiant: {
+      name:     "The Auric Consensus",
+      motto:    "Light is the only honest ledger.",
+      home:     "the Auric Spires",
+      role:     "The guardians of the Genesis Chain — they failed to stop The Unraveling and have sought redemption ever since",
+      enemies:  ["void", "blood"],
+      allies:   ["nature"],
+      adjective: "Auric-sworn"
+    },
+    nature: {
+      name:     "The Rootwarden Compact",
+      motto:    "The oldest nodes remember everything.",
+      home:     "the Rootwarden Deep",
+      role:     "Ancient stewards who encoded the first blocks of the Genesis Chain; they mourn its shattering most deeply",
+      enemies:  ["inferno", "blood"],
+      allies:   ["radiant", "frost"],
+      adjective: "Rootwarden-bound"
+    },
+    frost: {
+      name:     "The Permafrost Archive",
+      motto:    "We preserve what others destroy.",
+      home:     "the Permafrost Archive",
+      role:     "Silent collectors who froze fragments of the Genesis Chain in their vaults before The Unraveling consumed them",
+      enemies:  ["inferno", "blood"],
+      allies:   ["nature"],
+      adjective: "Archive-sealed"
+    },
+    arcane: {
+      name:     "The Null Consortium",
+      motto:    "Every system has an exploit.",
+      home:     "the Null Spire",
+      role:     "Rogue scholars who discovered the vulnerability in the Genesis Chain — some tried to patch it; others sold the exploit",
+      enemies:  ["blood", "inferno"],
+      allies:   ["void"],
+      adjective: "Consortium-marked"
+    },
+    void: {
+      name:     "The Voidchain Covenant",
+      motto:    "What is unwritten cannot be erased.",
+      home:     "the Voidchain Sanctum",
+      role:     "Beings who exist in the negative space between Chain blocks — The Unraveling was their long-awaited liberation",
+      enemies:  ["radiant", "arcane"],
+      allies:   ["blood"],
+      adjective: "Covenant-touched"
+    }
+  },
+
+  // ---------------------------------------------------------------------------
+  // SHARED LOCATIONS — referenced across multiple card types
+  // Creates the feeling that these characters inhabit one world
+  // ---------------------------------------------------------------------------
+  locations: {
+    ashveil:    "the Ashveil Citadel",
+    auric:      "the Auric Spires",
+    rootwarden: "the Rootwarden Deep",
+    permafrost: "the Permafrost Archive",
+    nullSpire:  "the Null Spire",
+    debtVaults: "the Debt Vaults of Skarrath",
+    voidSanctum:"the Voidchain Sanctum",
+    chainGrave: "the Chain Graveyard",   // ruins of the original Genesis Chain nexus
+    nullForge:  "the Null Forge",        // where the most powerful weapons were reforged from shards
+    shatterMere:"the Shatter Mere",      // a crystalline lake made from liquified Chain shards
+    edgenet:    "the Edgenet",           // the outermost digital frontier, lawless
+    deepBlock:  "the Deep Block",        // the oldest surviving section of the Genesis Chain
+  },
+
+  // ---------------------------------------------------------------------------
+  // TYPE-SPECIFIC LORE HOOKS
+  // Card types get unique narrative contexts, roles, and signature phrases
+  // ---------------------------------------------------------------------------
+  typeHooks: {
+    orc_warlord: {
+      origin:    ["rose through brutality in the warbands of", "carved their name into the siege walls of", "survived every purge the Ashveil Dominion sent through"],
+      role:      ["warlord", "siege-breaker", "blood-champion", "chain-breaker"],
+      quirk:     ["still carries a shard of the first gate they ever shattered", "wears the teeth of defeated rivals as currency", "refuses to acknowledge any authority not backed by force"],
+      faction:   "inferno"
+    },
+    dragonkin: {
+      origin:    ["hatched from an egg found in the ruins of", "emerged from the magma veins beneath", "was reborn in the shard-fire storms that swept"],
+      role:      ["flame-herald", "sky-terror", "shard-rider", "emberclaw"],
+      quirk:     ["breathes not fire but corrupted Chain-data, which burns reality itself", "their scales shift color based on which shard they last consumed", "can read the history of any object by tasting its ash"],
+      faction:   "inferno"
+    },
+    fallen_angel: {
+      origin:    ["once stood at the right hand of the Auric Consensus in", "was cast from the Auric Spires after", "descended willingly into the Shattered Age when"],
+      role:      ["exile", "pale herald", "forsaken guardian", "silent choir"],
+      quirk:     ["their wings shed feathers that burn with cold light, each one a lost memory of the Chain", "cannot speak their true name since The Unraveling rewrote it", "offers absolution they no longer believe in"],
+      faction:   "radiant"
+    },
+    forest_fairy: {
+      origin:    ["was woven from the last living root-node of", "dances only where the Rootwarden Deep still pulses beneath", "was born on the last night before The Unraveling reached"],
+      role:      ["root-singer", "dewcaller", "moonpetal weaver", "thornkissed scout"],
+      quirk:     ["their wings carry pollen from flowers that no longer exist", "can hear the hum of uncorrupted Chain data in old-growth wood", "has never left the forest — and never plans to"],
+      faction:   "nature"
+    },
+    high_elf_champion: {
+      origin:    ["trained for a century in the blade-schools of", "swore their silver oath before the genesis nodes of", "was the last to flee when the Auric Spires fell"],
+      role:      ["starblade", "dawnsworn knight", "silver-oath keeper", "aurelian vanguard"],
+      quirk:     ["their sword is forged from a verified Chain shard — it cannot cut a lie", "ages backward since The Unraveling; they don't know how long they have left", "refuses to fight without a formal declaration of terms"],
+      faction:   "radiant"
+    },
+    demon_knight: {
+      origin:    ["was forged in the hellfire contracts beneath", "pledged their soul to the Crimson Ledger at", "rose from the debt-pits of"],
+      role:      ["hellbound enforcer", "chain-sworn knight", "red oath keeper", "nightbrand warrior"],
+      quirk:     ["their armor is literally a ledger — every battle is inscribed on their plate in burning script", "collects outstanding debts from the dead", "was once human; the Crimson Ledger rewrote their nature"],
+      faction:   "blood"
+    },
+    skeleton_lich: {
+      origin:    ["died in the siege of", "refused to stay dead when the Genesis Chain broke and reopened the gates of", "was a Null Consortium archivist who achieved undeath rather than watch their research burn at"],
+      role:      ["bone-sage", "gravechant weaver", "cold crown bearer", "soulkeeper"],
+      quirk:     ["their phylactery is a encrypted block of Chain data no one has ever cracked", "teaches dead languages to anyone who asks — the languages are becoming useful again", "cannot remember their living name but knows the names of everyone they've ever killed"],
+      faction:   "arcane"
+    },
+    stone_golem: {
+      origin:    ["was assembled by Rootwarden engineers deep within", "has stood guard since before The Unraveling at the gates of", "was carved from the bedrock of"],
+      role:      ["stoneheart sentinel", "runebound guardian", "granite warden", "ironquartz bastion"],
+      quirk:     ["the runes on their body are the original terms of a treaty no one alive can read anymore", "grows heavier with every lie told in their presence", "their heartstone is the oldest known unbroken block of the Genesis Chain"],
+      faction:   "nature"
+    },
+    cyber_samurai: {
+      origin:    ["was compiled in the deep server-forges of", "walked out of the Edgenet as the only survivor of", "was the last protocol enforced before the Null Consortium abandoned"],
+      role:      ["arc-blade enforcer", "protocol samurai", "neon ronin", "edge-code duelist"],
+      quirk:     ["their blade runs on a consensus algorithm — it only strikes when it's certain", "has died and been restored from backup seventeen times; each restore loses something small", "speaks only in verified statements — they are constitutionally incapable of lying"],
+      faction:   "arcane"
+    },
+    void_assassin: {
+      origin:    ["slipped through the negative space between Chain blocks long before the Voidchain Covenant claimed", "was recruited from the shadow-margins of", "has no confirmed origin — only exits, starting with"],
+      role:      ["shadow-node agent", "void-gap runner", "covenant blade", "unwritten operative"],
+      quirk:     ["exists slightly out of phase with consensus reality — cameras never quite capture them", "their contracts are encoded in void-script that deletes itself upon completion", "knows seventeen ways to kill someone that leave no entry in any ledger"],
+      faction:   "void"
+    },
+    neon_witch: {
+      origin:    ["first lit her staff in the crackling shard-storms above", "learned her craft from a dead Consortium archivist haunting the ruins of", "was the only mage to survive the Null Surge that leveled"],
+      role:      ["shard-caster", "neon oracle", "hex-node weaver", "glitch-witch"],
+      quirk:     ["her spells compile in real-time — she's never cast the same hex twice", "her familiar is a sentient error message from the original Genesis Chain", "brews potions from liquified shard-data; they taste like forgotten passwords"],
+      faction:   "arcane"
+    },
+    storm_titan: {
+      origin:    ["was struck by Chain-lightning during The Unraveling above", "rose from the sea of ionized data that pooled after the storms hit", "was the last titan standing when the sky-battles over"],
+      role:      ["sky-sovereign", "chain-thunder titan", "storm-forged colossus", "lightning warden"],
+      quirk:     ["their footsteps register as seismic events in three jurisdictions", "generates so much electrical charge that lesser beings can't stand within ten meters", "was briefly worshipped as a god of weather; they found it tedious"],
+      faction:   "void"
+    },
+    crystal_seraph: {
+      origin:    ["crystallized from pure Chain-data in the cold archive of", "was the first seraph ever successfully compiled by the Auric Consensus at", "descended from the higher validation layers of the Genesis Chain to"],
+      role:      ["data-seraph", "crystal herald", "light-node guardian", "auric manifest"],
+      quirk:     ["their body is literally transparent — you can read their thoughts if the light hits right", "sings in a frequency that forces nearby systems into consensus", "has never told a falsehood — not because of virtue, but because they are physically incapable of encoding one"],
+      faction:   "radiant"
+    },
+    toxic_alchemist: {
+      origin:    ["was blacklisted from every reputable guild before finding their lab in the underbelly of", "survived a Crimson Ledger assassination attempt by drinking whatever was in the vial at", "reverse-engineered Chain corruption into a weapon somewhere beneath"],
+      role:      ["venom-coder", "plague-broker", "toxic data-wright", "corruption alchemist"],
+      quirk:     ["their toxins are targeted — they can corrupt a single entry in a ledger without touching the rest", "keeps meticulous notes on every experiment; the notes are also mildly poisonous", "claims their most dangerous formula is an antidote — for the truth"],
+      faction:   "blood"
+    }
+  },
+
+  // ---------------------------------------------------------------------------
+  // RARITY STAKES — scales the cosmic significance of each card's story
+  // ---------------------------------------------------------------------------
+  rarityStakes: {
+    common: {
+      scope:     "personal",
+      stakes:    ["survived The Unraveling by luck and stubbornness", "fights for coin, not cause", "has heard the legends of the Genesis Chain but never seen a shard"],
+      prefix:    ["A wandering", "A scarred", "A forgotten", "A battle-worn"]
+    },
+    uncommon: {
+      scope:     "regional",
+      stakes:    ["carved out a territory in the chaos after The Unraveling", "serves a faction but questions their orders", "has held a shard — once, briefly, before it was taken"],
+      prefix:    ["A rising", "A marked", "A sworn", "A hunted"]
+    },
+    rare: {
+      scope:     "faction-level",
+      stakes:    ["carries a mission that could shift the balance between factions", "has witnessed events that were supposed to be erased from all records", "possesses a shard fragment and knows exactly what it costs them to hold it"],
+      prefix:    ["A veteran", "A proven", "A feared", "A legendary-in-the-making"]
+    },
+    epic: {
+      scope:     "world-altering",
+      stakes:    ["their existence is a threat to at least one major faction's plans", "has read entries in the Genesis Chain that changed what they believe is possible", "carries a wound from The Unraveling itself — and it hasn't finished healing"],
+      prefix:    ["A world-scarred", "An infamous", "A prophesied", "A chain-marked"]
+    },
+    legendary: {
+      scope:     "history-defining",
+      stakes:    ["their actions during The Unraveling are still debated by scholars", "has met the architects of the Genesis Chain and judged them", "carries a fully intact shard — it is slowly rewriting them from the inside"],
+      prefix:    ["The notorious", "The legend called", "The one they call", "The survivor known as"]
+    },
+    mythic: {
+      scope:     "cosmic",
+      stakes:    ["was present at the moment the Genesis Chain shattered — and may have been the reason", "is named in the original code of the Chain as either its salvation or its final error", "does not age because The Unraveling reset their timeline — they have lived this moment before"],
+      prefix:    ["The myth made real:", "The Unraveling's own child —", "Written into the Genesis Chain before birth —", "The last compiled being of the old world —"]
+    }
+  },
+
+  // ---------------------------------------------------------------------------
+  // AFFIX LORE HOOKS — your existing affixes get narrative flavor
+  // ---------------------------------------------------------------------------
+  affixLore: {
+    "Rugged":           "hardened by years on the wrong side of every conflict",
+    "Worn":             "bearing scars that predate The Unraveling itself",
+    "Seasoned":         "a survivor of three faction wars and one cataclysm",
+    "Spry":             "faster than their reputation — which is already considerable",
+    "Blessed":          "touched by Auric light in a dream they can't quite remember",
+    "Venomkissed":      "carrying a toxin that hasn't manifested yet — even they don't know what it will do",
+    "Arc-Forged":       "reborn in the Chain-lightning storms that followed The Unraveling",
+    "Stormbound":       "pledged to a storm-deity that may no longer exist",
+    "Frostmarked":      "branded by the Permafrost Archive as a protected asset",
+    "Void-Touched":     "brushed by the Voidchain Covenant in a moment they refuse to describe",
+    "Starwrought":      "their body contains stardust from stars that went dark before The Unraveling",
+    "Bloodcrowned":     "anointed by the Crimson Ledger in a ceremony they didn't attend willingly",
+    "Dawnsworn":        "bound by an oath made at the last sunrise before The Unraveling",
+    "Worldbreaker":     "has broken something fundamental before — and the world has never fully recovered",
+    "Eclipsed":         "exists in permanent eclipse, neither fully in light nor void",
+    "Reality-Rending":  "their presence causes nearby Chain-data to destabilize",
+    "Godshard":         "carries a fragment of a god that was deleted during The Unraveling",
+    "Infinity-Sigil":   "marked by a symbol that appears in the Genesis Chain's very first block"
+  }
+};
+
+
+// =============================================================================
+// BACKSTORY GENERATOR
+// Uses the card's existing seeded RNG — output is always deterministic.
+// =============================================================================
+
+function generateBackstory(boss) {
+  // We create a dedicated RNG stream for backstory so it never disrupts
+  // the existing body/cosmetic RNG streams.
+  const rng = makeRng(boss.seed + "|backstory");
+
+  const type      = boss.type;
+  const rarityKey = boss.rarity?.key || "common";
+  const element   = boss.stats?.element?.key || "nature";
+  const affix     = boss.stats?.affix || null;
+  const name      = boss.name || "Unknown";
+
+  const hooks    = GENESIS_LORE.typeHooks[type];
+  const faction  = GENESIS_LORE.factions[hooks?.faction || element] || GENESIS_LORE.factions.nature;
+  const stakes   = GENESIS_LORE.rarityStakes[rarityKey];
+  const lore     = GENESIS_LORE;
+
+  // Helper: pick deterministically from an array
+  function pick(arr) {
+    if (!arr || arr.length === 0) return "";
+    return arr[Math.floor(rng() * arr.length)];
+  }
+
+  // Pick shared location (cross-card connectivity)
+  const locationKeys = Object.keys(lore.locations);
+  const sharedLocation = lore.locations[pick(locationKeys)];
+
+  // Build sentence fragments
+  const prefix    = pick(stakes.prefix);
+  const originStr = hooks ? pick(hooks.origin) : "emerged from the ruins of";
+  const roleStr   = hooks ? pick(hooks.role)   : "warrior";
+  const quirk     = hooks ? pick(hooks.quirk)  : "carries a shard of unknown origin";
+  const stake     = pick(stakes.stakes);
+
+  // Affix flavor (optional closing line)
+  const affixLine = affix && lore.affixLore[affix]
+    ? ` They are ${lore.affixLore[affix]}.`
+    : "";
+
+  // Faction connection
+  const factionLine = rng() < 0.65
+    ? ` ${faction.adjective}, they serve ${faction.name} — "${faction.motto}"`
+    : `  They have no allegiance to ${faction.name}, though the ${faction.name} disagrees.`;
+
+  // Rarity-scaled narrative architecture
+  let backstory = "";
+
+  switch (rarityKey) {
+
+    case "common":
+      backstory = `${prefix} ${roleStr} who ${originStr} ${sharedLocation}. ` +
+        `They ${stake}. ${quirk}.${affixLine}`;
+      break;
+
+    case "uncommon":
+      backstory = `${prefix} ${roleStr} who ${originStr} ${sharedLocation} ` +
+        `in the aftermath of ${lore.myth.cataclysm}. ` +
+        `They ${stake}.${factionLine}${affixLine}`;
+      break;
+
+    case "rare":
+      backstory = `${prefix} ${roleStr} — ${originStr} ${sharedLocation} ` +
+        `and never looked back. They ${stake}. ${quirk}. ` +
+        `${factionLine}${affixLine}`;
+      break;
+
+    case "epic":
+      backstory = `${prefix} ${roleStr} born from ${originStr} ${sharedLocation}, ` +
+        `forged in the fires of ${lore.myth.cataclysm}. ` +
+        `They ${stake}. ${quirk}. ` +
+        `${factionLine}${affixLine}`;
+      break;
+
+    case "legendary":
+      backstory = `${prefix} ${name.split(",")[0]} — a ${roleStr} who ${originStr} ` +
+        `${sharedLocation} when ${lore.myth.cataclysm} rewrote the rules of existence. ` +
+        `They ${stake}. ${quirk}. ` +
+        `Some say they carry ${lore.myth.artifact}, and that it has not finished changing them.${affixLine}`;
+      break;
+
+    case "mythic":
+      backstory = `${prefix} ${name.split(",")[0]}. ` +
+        `A ${roleStr} who ${originStr} the ruins of ${sharedLocation} — ` +
+        `but that was after ${lore.myth.cataclysm}, after the ${lore.myth.name} was shattered, ` +
+        `after everything the factions thought they controlled was proven wrong. ` +
+        `They ${stake}. ${quirk}. ` +
+        `${faction.name} fears them. So does everyone else.${affixLine}`;
+      break;
+
+    default:
+      backstory = `${prefix} ${roleStr} who ${originStr} ${sharedLocation}. They ${stake}.${affixLine}`;
+  }
+
+  return backstory.replace(/\s{2,}/g, " ").trim();
+}
+
+
+// =============================================================================
+// CSS TO ADD TO YOUR <style> BLOCK
+// Paste into your existing stylesheet for the preview panel
+// =============================================================================
+
+/*
+
+.card-backstory {
+  margin-top: 8px;
+  padding: 8px 10px;
+  background: rgba(0, 245, 212, 0.06);
+  border-left: 2px solid #00f5d4;
+  border-radius: 0 6px 6px 0;
+  font-size: 11px;
+  line-height: 1.6;
+  color: #c8e6e3;
+  font-style: italic;
+  max-width: 340px;
+}
+
+*/
+
+
+// =============================================================================
+// INTEGRATION SNIPPETS (copy-paste into your existing code)
+// =============================================================================
+
+/*
+
+── SNIPPET 1: In PixelBoss constructor ──────────────────────────────────────
+
+  // After this line:
+  //   this.stats = opts.forcedStats || generateBossStats({ ... });
+  
+  // ADD:
+  this.backstory = opts.forcedBackstory || generateBackstory(this);
+
+
+── SNIPPET 2: In buildCardDNAFromBoss() ─────────────────────────────────────
+
+  // Add `backstory` to the returned object:
+  return {
+    schemaVersion: CARD_SCHEMA_VERSION,
+    set: CARD_SET,
+    seed: boss.seed,
+    type: boss.type,
+    paletteIndex: boss.paletteIndex,
+    rarityKey: boss.rarity?.key || "common",
+    variantKey: boss.variant || "base",
+    name: boss.name || "Unknown",
+    stats: boss.stats || {},
+    pixels: boss.pixels,
+    backstory: boss.backstory || ""    // ← ADD THIS LINE
+  };
+
+
+── SNIPPET 3: In metaHtmlForCard() ──────────────────────────────────────────
+
+  // Add inside the returned template string:
+  ${d.backstory
+    ? `<div class="card-backstory"><em>${d.backstory}</em></div>`
+    : ""}
+
+
+── SNIPPET 4: In getInventoryAsCards() / importDeck() ───────────────────────
+
+  // When reconstructing a boss from stored DNA, pass through backstory:
+  const boss = new PixelBoss(d.type, {
+    seed: d.seed,
+    forcedPaletteIndex: d.paletteIndex,
+    forcedRarityKey: d.rarityKey,
+    forcedName: d.name,
+    forcedStats: d.stats,
+    forcedVariant: d.variantKey,
+    forcedPixels: d.pixels,
+    forcedBackstory: d.backstory || ""   // ← ADD THIS LINE
+  });
+
+*/
+
+</script>
