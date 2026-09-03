@@ -28,12 +28,19 @@
           <button class="menu-card battle" data-go="quick"><span class="menu-icon">⚔</span><div><b>Quick Battle</b><small>AI simulator or online PvP</small></div><span>›</span></button>
           <button class="menu-card cards" data-go="cards"><span class="menu-icon">▤</span><div><b>Card Studio</b><small>Generate, inspect, and filter</small></div><span>›</span></button>
           <button class="menu-card decks" data-go="decks"><span class="menu-icon">▥</span><div><b>Deck Builder</b><small id="deckSummary">1 saved deck</small></div><span>›</span></button>
+          <button class="menu-card stats" data-go="stats"><span class="menu-icon">⌁</span><div><b>Stats & Rankings</b><small>Your record and global top 100</small></div><span>›</span></button>
+          <button class="menu-card items" data-go="items"><span class="menu-icon">✧</span><div><b>Lore Vault</b><small id="itemSummary">0 unique discoveries</small></div><span>›</span></button>
+          <button class="menu-card social" data-go="social"><span class="menu-icon">◎</span><div><b>Social & Trade</b><small>Market, chat, and friends</small></div><span>›</span></button>
+          <button class="menu-card shop" data-go="shop"><span class="menu-icon">◇</span><div><b>Pixel Shop</b><small>Secure credit packages</small></div><span>›</span></button>
+          <button class="menu-card rules" data-go="rules"><span class="menu-icon">?</span><div><b>Battle Rules</b><small>Win conditions, formulas, and Cancel Wilds</small></div><span>›</span></button>
         </div>
         <div class="stat-strip" id="homeStats"></div>
       </section>
 
       <section class="screen" data-screen="campaign">
         <div class="section-head"><div><span class="eyebrow">INFINITE ASCENSION</span><h2>Campaign Map</h2></div><select id="campaignPage" aria-label="Campaign area"></select></div>
+        <div id="universeTabs" class="tab-row"><button data-universe="1" class="active">Genesis</button><button data-universe="2">Cosmos</button></div>
+        <div id="universeIntro" class="universe-intro"></div>
         <div id="campaignZone" class="zone-banner"></div>
         <div id="stageMap" class="stage-map"></div>
       </section>
@@ -50,6 +57,7 @@
       <section class="screen" data-screen="cards">
         <div class="section-head"><div><span class="eyebrow">GENESIS FORGE</span><h2>Card Studio</h2></div><button id="openGenerator" class="primary small">+ Generate</button></div>
         <div class="filter-row"><input id="cardSearch" type="search" placeholder="Search name, type, element…"><select id="cardSort"><option value="recent">Newest</option><option value="power">Power</option><option value="rarity">Rarity</option><option value="level">Level</option><option value="name">Name</option></select></div>
+        <div id="collectionFilters" class="tab-row compact"><button data-collection="" class="active">All</button><button data-collection="GENESIS">Genesis</button><button data-collection="COSMOS">Cosmos</button></div>
         <div class="chip-row" id="elementFilters"></div>
         <div class="collection-meta"><span><b id="binderCount">0</b> unique cards</span><span><button id="advancedFilters" class="text-button">Advanced</button><button id="binderTools" class="text-button">Import / Export</button></span></div>
         <div id="binderGrid" class="card-grid"></div>
@@ -79,18 +87,67 @@
         <div id="battleLog" class="battle-log"></div>
       </section>
 
+      <section class="screen" data-screen="stats">
+        <div class="section-head"><div><span class="eyebrow">PLAYER RECORDS</span><h2>Stats & Rankings</h2></div></div>
+        <div id="statsTabs" class="tab-row"><button data-stats-tab="mine" class="active">My Stats</button><button data-stats-tab="leaders">Top 100</button></div>
+        <div id="myStatsPanel"><div id="profileSummary" class="profile-summary"></div><div id="statsGrid" class="stats-grid"></div><div id="typeStats" class="settings-panel"></div></div>
+        <div id="leaderPanel" class="hidden"><label class="field"><span>Leaderboard category</span><select id="leaderStat"></select></label><div id="leaderboard" class="leaderboard"></div></div>
+      </section>
+
+      <section class="screen" data-screen="items">
+        <div class="section-head"><div><span class="eyebrow">UNIQUE INVENTORY</span><h2>Lore Vault</h2></div><span id="itemCount" class="count-badge">0</span></div>
+        <p class="muted">Campaign victories may reveal unique lore. Duplicate discoveries are never added.</p>
+        <div id="itemFilters" class="tab-row compact"><button data-item-universe="0" class="active">All</button><button data-item-universe="1">Genesis</button><button data-item-universe="2">Cosmos</button></div>
+        <div id="itemGrid" class="item-grid"></div>
+      </section>
+
+      <section class="screen" data-screen="social">
+        <div class="section-head"><div><span class="eyebrow">CONNECTED PLAY</span><h2>Social & Trade</h2></div></div>
+        <div id="socialTabs" class="tab-row"><button data-social-tab="market" class="active">Market</button><button data-social-tab="chat">Chat</button><button data-social-tab="friends">Friends</button></div>
+        <div id="marketPanel">
+          <div class="market-tools"><input id="marketSearch" type="search" placeholder="Search cards or sellers…"><select id="marketFilter"><option value="">All listings</option><option value="fixed">Fixed price</option><option value="auction">Auction</option><option value="trade">Card trade</option></select><button id="createListing" class="primary small">+ List Card</button></div>
+          <div id="marketList" class="market-list"></div>
+        </div>
+        <div id="chatPanel" class="hidden">
+          <div class="chat-room-row"><select id="chatRoom"><option value="global">Global Chat</option><option value="community:genesis">Genesis Community</option><option value="community:cosmos">Cosmos Community</option></select><button id="connectChat">Connect</button></div>
+          <div id="chatMessages" class="chat-messages"></div>
+          <form id="chatForm" class="chat-compose"><input id="chatInput" maxlength="500" placeholder="Send a message…" autocomplete="off"><button class="primary">Send</button></form>
+        </div>
+        <div id="friendsPanel" class="hidden">
+          <form id="friendForm" class="chat-compose"><input id="friendTag" maxlength="30" placeholder="Player tag or ID"><button class="primary">Add</button></form>
+          <h3>Requests</h3><div id="friendRequests" class="friend-list"></div>
+          <h3>Friends</h3><div id="friendList" class="friend-list"></div>
+        </div>
+      </section>
+
+      <section class="screen" data-screen="shop">
+        <div class="section-head"><div><span class="eyebrow">SECURE CHECKOUT</span><h2>Pixel Shop</h2></div></div>
+        <div class="shop-notice"><b>Pixels fund card generation and reshuffles.</b><span>Purchases are fulfilled by the server after verified payment—not by the APK.</span></div>
+        <div id="cashPackages" class="shop-grid"></div>
+        <p class="muted legal-note">Purchases are optional. Prices and availability may vary by region and storefront. Google Play builds intended for Play distribution must use an approved Play Billing implementation for digital goods.</p>
+      </section>
+
+      <section class="screen" data-screen="rules">
+        <div class="section-head"><div><span class="eyebrow">FIELD MANUAL</span><h2>Battle Rules</h2></div></div>
+        <div id="rulesContent" class="rule-stack"></div>
+      </section>
+
       <section class="screen" data-screen="settings">
-        <div class="section-head"><div><span class="eyebrow">PLAYER & NETWORK</span><h2>Settings</h2></div></div>
+        <div class="section-head"><div><span class="eyebrow">PLAYER PROFILE</span><h2>Settings</h2></div></div>
         <div class="settings-panel">
           <label class="field"><span>Player name</span><input id="playerName" maxlength="24"></label>
-          <label class="field"><span>Railway server URL</span><input id="serverUrl" inputmode="url" placeholder="https://your-app.up.railway.app"></label>
+          <label class="field"><span>Public tag</span><input id="playerTag" maxlength="30" placeholder="K-STAR"></label>
+          <label class="field"><span>Profile bio</span><textarea id="playerBio" maxlength="240" placeholder="Tell the Chain who you are…"></textarea></label>
+          <div class="field"><span>Profile icon</span><div id="profileIcons" class="icon-picker"></div></div>
+          <div id="gfpStatus" class="account-link"></div>
+          <button id="connectGfp">Connect GetFirstPage.com Account</button>
           <label class="toggle"><span><b>Battle effects</b><small>Particles, glow, and screen pulses</small></span><input id="effectsToggle" type="checkbox"></label>
           <label class="toggle"><span><b>Vibration</b><small>Short haptics on supported phones</small></span><input id="vibrationToggle" type="checkbox"></label>
           <label class="toggle"><span><b>Automatic cloud save</b><small>Sync after important progress</small></span><input id="syncToggle" type="checkbox"></label>
           <div class="editor-actions"><button id="saveSettings" class="primary">Save Settings</button><button id="syncNow">Sync Now</button></div>
         </div>
         <div class="settings-panel"><h3>Complete Save</h3><p class="muted">A save file contains your binder, decks, Pixels, campaign progress, stats, and settings.</p><div class="editor-actions"><button id="exportSave">Export Save</button><button id="importSaveBtn">Import Save</button></div></div>
-        <div class="settings-panel future"><span class="eyebrow">FUTURE READY</span><h3>Minting & Store Hooks</h3><p>Every card keeps deterministic DNA, a unique hash, set name, mint status, and schema version. Purchase and wallet adapters can be added without replacing local cards.</p></div>
+        <div class="settings-panel future"><span class="eyebrow">BLOCKCHAIN PROFILE</span><h3>Wallet & Minting</h3><p id="walletStatus">No wallet connected. The minting service remains disabled until its Railway contract variables are configured.</p><button id="saveWallet">Add Wallet Address</button></div>
       </section>
     </main>
 

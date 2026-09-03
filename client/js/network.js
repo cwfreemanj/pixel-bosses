@@ -1,3 +1,5 @@
+export const PIXEL_BOSSES_SERVER = 'https://web-production-efaa4b.up.railway.app';
+
 export class PixelNetwork extends EventTarget {
   constructor(getState) {
     super();
@@ -5,22 +7,26 @@ export class PixelNetwork extends EventTarget {
     this.ws = null;
   }
   get baseUrl() {
-    const configured = this.getState().settings.serverUrl?.trim();
-    return configured || (location.protocol.startsWith('http') ? location.origin : '');
+    return ['localhost', '127.0.0.1'].includes(location.hostname) && location.protocol.startsWith('http')
+      ? location.origin
+      : PIXEL_BOSSES_SERVER;
   }
-  async sync(state) {
-    if (!this.baseUrl) throw new Error('Add your Railway server URL in Settings first.');
-    const response = await fetch(`${this.baseUrl}/api/profile/sync`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ playerId: state.playerId, token: state.playerToken, state, updatedAt: state.updatedAt })
-    });
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.error || 'Sync failed');
+  authHeaders(state = this.getState()) {
+    return { 'content-type': 'application/json', 'x-player-id': state.playerId, 'x-player-token': state.playerToken };
+  }
+  async request(path, options = {}) {
+    const response = await fetch(`${this.baseUrl}${path}`, { ...options, headers: { ...this.authHeaders(), ...(options.headers || {}) } });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || `Request failed (${response.status})`);
     return data;
   }
+  async sync(state) {
+    return this.request('/api/profile/sync', {
+      method: 'POST',
+      body: JSON.stringify({ playerId: state.playerId, token: state.playerToken, state, updatedAt: state.updatedAt })
+    });
+  }
   connect() {
-    if (!this.baseUrl) throw new Error('Add your Railway server URL in Settings first.');
     this.close();
     const url = new URL(this.baseUrl);
     url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';

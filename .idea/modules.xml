@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/Pixel-Bosses-Mobile-Android.iml" filepath="$PROJECT_DIR$/.idea/Pixel-Bosses-Mobile-Android.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/pixel-bosses-mobile.iml" filepath="$PROJECT_DIR$/.idea/pixel-bosses-mobile.iml" />
     </modules>
   </component>
 </project>

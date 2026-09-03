@@ -1,0 +1,17 @@
+{
+  "name": "pixel-bosses-contracts",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "compile": "hardhat compile --config hardhat.config.cjs",
+    "deploy:amoy": "hardhat run scripts/deploy.cjs --network amoy --config hardhat.config.cjs",
+    "deploy:polygon": "hardhat run scripts/deploy.cjs --network polygon --config hardhat.config.cjs"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-ethers": "^3.0.8",
+    "@openzeppelin/contracts": "5.2.0",
+    "dotenv": "^16.4.7",
+    "ethers": "^6.15.0",
+    "hardhat": "^2.22.18"
+  }
+}

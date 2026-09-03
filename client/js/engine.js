@@ -1,4 +1,4 @@
-import { BOSS_TYPES, ELEMENTS, PREFIXES, RARITIES, TITLES } from './data.js';
+import { BOSS_TYPES, COLLECTIONS, COSMOS_PREFIXES, COSMOS_TITLES, ELEMENTS, PREFIXES, RARITIES, TITLES } from './data.js';
 
 export function hashString(value) {
   let h = 2166136261;
@@ -37,11 +37,17 @@ export function pickRarity(rng, boost = 0, forcedMaxIndex = null) {
 export function makeCard(options = {}) {
   const seed = options.seed || `${Date.now()}-${Math.random()}`;
   const rng = rngFrom(seed);
-  let typePool = BOSS_TYPES;
-  if (options.element && rng() < (options.primaryChance ?? 1)) {
-    typePool = BOSS_TYPES.filter((type) => type.element === options.element);
+  const collection = String(options.collection || options.set || 'GENESIS').toUpperCase() === 'COSMOS' ? 'COSMOS' : 'GENESIS';
+  const collectionTypes = COLLECTIONS[collection].types;
+  let typePool = collectionTypes;
+  if (Array.isArray(options.typeKeys) && options.typeKeys.length) {
+    typePool = collectionTypes.filter((type) => options.typeKeys.includes(type.key));
   }
-  const type = pick(typePool.length ? typePool : BOSS_TYPES, rng);
+  if (options.element && rng() < (options.primaryChance ?? 1)) {
+    const elemental = typePool.filter((type) => type.element === options.element);
+    if (elemental.length) typePool = elemental;
+  }
+  const type = pick(typePool.length ? typePool : collectionTypes, rng);
   const element = options.element && options.forceElement ? options.element : type.element;
   const rarity = options.rarityKey ? RARITIES.find((r) => r.key === options.rarityKey) : pickRarity(rng, options.rarityBoost || 0, options.maxRarityIndex);
   const range = options.levelRange || [1, 10];
@@ -55,14 +61,32 @@ export function makeCard(options = {}) {
     def: base() + (['nature', 'radiant'].includes(element) ? 10 : 0),
     mag: base() + (['arcane', 'void'].includes(element) ? 14 : 0),
     spd: base() + (['void', 'frost'].includes(element) ? 9 : 0),
-    affix: pick(['Rugged', 'Spry', 'Blessed', 'Arc-Forged', 'Void-Touched', 'Starwrought', 'Worldbreaker'], rng)
+    crit: Math.min(45, Math.round(2 + rarity.mult * 3 + level * .18 + int(0, 8, rng))),
+    luck: Math.min(50, Math.round(int(1, 14, rng) + rarity.mult * 4)),
+    resonance: collection === 'COSMOS' ? Math.round(base() * .42 + level) : Math.round(base() * .15),
+    armorPen: Math.min(40, Math.round(int(0, 7, rng) + (['inferno', 'blood', 'void'].includes(element) ? level * .2 : level * .08))),
+    affix: pick(collection === 'COSMOS'
+      ? ['Starbound', 'Event-Hardened', 'Quantum-Split', 'Redshifted', 'Worldseed', 'Horizon-Touched', 'Paradox-Born']
+      : ['Rugged', 'Spry', 'Blessed', 'Arc-Forged', 'Void-Touched', 'Starwrought', 'Worldbreaker'], rng)
   };
-  const name = `${pick(PREFIXES, rng)} ${type.name.split(' ')[0]} ${pick(TITLES, rng)}`;
-  const variantKey = rng() < 0.08 ? 'neon_variant' : 'base';
-  const cardHash = `PB-${hashString(JSON.stringify({ seed, type: type.key, rarity: rarity.key, level, stats }))}-${hashString(seed + name)}`;
+  const name = `${pick(collection === 'COSMOS' ? COSMOS_PREFIXES : PREFIXES, rng)} ${type.name.split(' ')[0]} ${pick(collection === 'COSMOS' ? COSMOS_TITLES : TITLES, rng)}`;
+  const variantRoll = rng();
+  const variantKey = variantRoll < .03 ? 'prismatic_variant' : variantRoll < (collection === 'COSMOS' ? .14 : .11) ? 'neon_variant' : 'base';
+  const art = {
+    silhouette: pick(['tapered', 'armored', 'winged', 'orbital', 'colossal', 'serpentine'], rng),
+    head: pick(['crown', 'horns', 'halo', 'crest', 'hood', 'antennae'], rng),
+    eyes: pick(['single', 'twin', 'visor', 'constellation'], rng),
+    aura: pick(['pulse', 'rings', 'sparks', 'mist', 'comets'], rng),
+    pattern: pick(['solid', 'split', 'runes', 'stars', 'circuit', 'crystal'], rng),
+    satellites: collection === 'COSMOS' ? int(0, 4, rng) : int(0, 2, rng),
+    width: int(4, 6, rng),
+    density: .72 + rng() * .22
+  };
+  const cardHash = `PB-${hashString(JSON.stringify({ collection, seed, type: type.key, rarity: rarity.key, level, stats, art }))}-${hashString(seed + name)}`;
   return {
-    schemaVersion: 2,
-    set: 'GENESIS',
+    schemaVersion: 3,
+    set: collection,
+    universe: collection === 'COSMOS' ? 2 : 1,
     id: cardHash,
     cardHash,
     seed,
@@ -74,17 +98,20 @@ export function makeCard(options = {}) {
     rarityPower: RARITIES.findIndex((r) => r.key === rarity.key) + 1,
     level,
     variantKey,
+    art,
     colors: { body: type.body, accent: type.accent, glow: ELEMENTS.find((e) => e.key === element)?.color || '#fff' },
     stats,
     powerScore: computePowerScore(stats),
-    backstory: `${name}, a ${stats.affix.toLowerCase()} ${type.name.toLowerCase()}, emerged after the Genesis Chain shattered. Their ${element} signature still pulses through every verified block.`,
+    backstory: collection === 'COSMOS'
+      ? `${name}, a ${stats.affix.toLowerCase()} ${type.name.toLowerCase()}, crossed the Starwake Threshold when the second Chain answered Genesis. Their ${element} resonance bends nearby constellations into living code.`
+      : `${name}, a ${stats.affix.toLowerCase()} ${type.name.toLowerCase()}, emerged after the Genesis Chain shattered. Their ${element} signature still pulses through every verified block.`,
     createdAt: Date.now(),
     mintStatus: 'UNMINTED'
   };
 }
 
 export function computePowerScore(stats = {}) {
-  return Math.round((stats.hp || 0) * .22 + (stats.atk || 0) * .25 + (stats.def || 0) * .2 + (stats.mag || 0) * .2 + (stats.spd || 0) * .13);
+  return Math.round((stats.hp || 0) * .20 + (stats.atk || 0) * .22 + (stats.def || 0) * .18 + (stats.mag || 0) * .18 + (stats.spd || 0) * .12 + (stats.crit || 0) * .18 + (stats.luck || 0) * .08 + (stats.resonance || 0) * .09 + (stats.armorPen || 0) * .12);
 }
 
 export function elementOutcome(a, b) {

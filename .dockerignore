@@ -1,0 +1,12 @@
+node_modules
+blockchain/node_modules
+blockchain/artifacts
+blockchain/cache
+www
+android
+.git
+.github
+*.apk
+*.aab
+.env
+npm-debug.log*

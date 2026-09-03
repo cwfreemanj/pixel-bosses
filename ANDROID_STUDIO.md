@@ -27,13 +27,13 @@ npm run android:open
 
 ## Configure online play
 
-Deploy the server using `DEPLOYMENT.md`. Launch the app, open **Settings**, paste the full HTTPS Railway URL, and tap **Save Settings**. Example:
+Deploy the server using `DEPLOYMENT.md`. This version is already connected to the production Railway host:
 
 ```text
-https://pixel-bosses-production.up.railway.app
+https://web-production-efaa4b.up.railway.app
 ```
 
-Do not add `/multiplayer`; the app adds that WebSocket path automatically.
+There is no server URL field in Settings. The client adds `/multiplayer` and each `/api/...` path automatically. To change hosts later, edit `PIXEL_BOSSES_SERVER` in `client/js/network.js`, then run `npm run android:sync`.
 
 Before release, also add your exact Railway host to `server.allowNavigation` in `capacitor.config.json` if your Capacitor/Android security policy requires it, then run `npm run android:sync` again.
 
@@ -64,7 +64,7 @@ If Android 15 reports “There was a problem parsing the package,” rebuild ins
 
 - **Web changes missing:** run `npm run android:sync` before building.
 - **Cleartext/network error:** use an `https://` Railway URL, not `http://`.
-- **Connection failed:** open the Railway `/health` URL in a browser, then check the exact URL saved in game.
+- **Connection failed:** open `https://web-production-efaa4b.up.railway.app/health` in a browser and confirm the latest GitHub commit deployed successfully.
 - **Gradle/JDK mismatch:** set Gradle JDK to Android Studio's embedded JBR 21.
 - **Old app data:** uninstall the debug app or clear its storage when testing migrations.
 - **No `adb` command:** use Android Studio's bundled terminal/platform-tools or add the SDK `platform-tools` folder to Windows `PATH`; Android Studio can still install builds without a global `adb` command.

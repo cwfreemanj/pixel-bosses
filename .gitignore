@@ -1,4 +1,8 @@
 node_modules/
+blockchain/node_modules/
+blockchain/artifacts/
+blockchain/cache/
+blockchain/.env
 www/
 android/.gradle/
 android/app/build/

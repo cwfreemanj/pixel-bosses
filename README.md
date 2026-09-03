@@ -1,17 +1,22 @@
 # Pixel Bosses Mobile
 
-An Android-ready, mobile-first rebuild of the supplied Pixel Bosses HTML game. It keeps the Genesis procedural-card identity, six rarities, seven-element Cancel Wild chart, level/rarity/power duel resolution, deterministic card DNA and hashes, binder and JSON portability, while splitting the original desktop panel wall into focused touch screens.
+An Android-ready, mobile-first rebuild of the supplied Pixel Bosses HTML game. Version 2 expands Genesis with the Cosmos collection, a second 70-stage campaign, unique lore, social trading, profiles, rankings, chat, payment adapters, and a Polygon minting service while keeping the original Cancel Wild rules and JSON portability.
 
 ## Included game flows
 
-- Home menu with Campaign, Quick Battle, Card Studio, Deck Builder, and Settings.
-- Infinite campaign progression in themed ten-stage areas. The first 70 stages cover Nature, Arcane, Inferno, Frost, Void, Radiant, and Blood before ascending into a harder cycle.
+- Home menu with Campaign, Quick Battle, Card Studio, Deck Builder, Stats, Lore Vault, Social & Trade, Pixel Shop, Battle Rules, and Settings.
+- Universe 1 Genesis stages 1–70 plus Universe 2 Cosmos stages 71–140. Cosmos starts above the Genesis finale and mixes Cosmos cards with two to four Genesis lineages.
 - Campaign decks are approximately 72% their featured element and 28% mixed elements so a single counter cannot sweep every card.
+- Unique, non-duplicating lore discoveries with higher drop odds in Cosmos.
 - Multiple named decks containing 5–20 unique cards. Duplicate card hashes are rejected locally and by the multiplayer server.
 - AI battle simulator with card-by-card play, autoplay, effects, result screens, rewards, and a 25-Pixel dual-deck reshuffle.
 - Server-authoritative PvP queue and auto-battle over WebSockets.
 - Pixel currency generation offers: larger offers increase level ranges and high-rarity odds.
-- Local persistence plus optional Railway/PostgreSQL profile synchronization.
+- Local persistence plus automatic Railway/PostgreSQL profile synchronization to the fixed production connector.
+- Per-player stats and server-generated top-100 leaderboards across score, wins, PvP, collection, Pixel, trade, mint, lore, and streak metrics.
+- Timed fixed-price, auction, and card-for-card market listings with card locks, bid escrow, losing-bid refunds, search, and filters.
+- Global, Genesis/Cosmos community, and friend-only private chat; friend requests, removal, and direct messaging.
+- GetFirstPage.com profile-link adapter, icon/tag/bio profiles, Stripe Checkout adapter, and server-side Polygon mint endpoint.
 - Binder, deck, single-card, and full-save JSON exports. Binder/deck imports merge unique cards. AI and opponent decks cannot be saved.
 - Stable `schemaVersion`, `cardHash`, `set`, and `mintStatus` fields reserved for later wallet, minting, and microtransaction adapters.
 - Installable PWA fallback and offline cache.
@@ -38,11 +43,13 @@ Open `http://localhost:3000`. Two browser windows can test matchmaking. For a ph
 | `client/js/campaign.js` | Infinite themed campaign algorithm |
 | `client/js/storage.js` | Local persistence and JSON formats |
 | `client/js/network.js` | Cloud-save and multiplayer client |
-| `server/server.js` | Profile sync, matchmaking, authoritative PvP |
+| `server/server.js` | Sync, rankings, market escrow, social/chat, checkout, minting, PvP |
+| `blockchain/` | OpenZeppelin ERC-721 contract and Hardhat deployment project |
 | `capacitor.config.json` | Android application identity and web directory |
 | `railway.json` | Railway build/start/health configuration |
 | `ANDROID_STUDIO.md` | Exact APK/AAB build steps |
 | `DEPLOYMENT.md` | GitHub and Railway deployment steps |
+| `BLOCKCHAIN_MINTING.md` | Exact Amoy-to-Polygon minting setup and security checklist |
 | `ORIGINAL_FEATURE_MAP.md` | Migration notes from the supplied source |
 
 ## Important production notes
